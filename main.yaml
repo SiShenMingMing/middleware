@@ -1,0 +1,55 @@
+---
+
+- hosts: azq
+  gather_facts: no
+  roles:
+    - role: azq
+  tags: azq
+
+## 安装数据库
+- hosts: mysql
+  gather_facts: no
+  roles:
+  - role: mysql-install
+  tags: mysql-install
+
+
+#备份数据库
+- hosts: mysql
+  gather_facts: no
+  # vars:
+  #   ENV: C0517
+  roles:
+  - role: mysql-bak
+  tags: mysql-bak
+
+
+# 安装pg数据库
+- hosts: postgresql
+  gather_facts: no
+  vars:
+    PG_PORT: 5432
+    PG_DIR: /data/apps/postgresql
+  roles:
+  - role: postgresql-install
+  tags: postgresql-install
+
+
+
+# 备份pg数据库
+- hosts: postgresql
+  gather_facts: no
+  vars:
+    PG_PORT: 5432
+    PG_DIR: /data/apps/postgresql
+  roles:
+  - role: postgresql-bak
+  tags: postgresql-bak
+
+
+# 备份mongodb
+- hosts: mongodb
+  gather_facts: no
+  roles:
+  - role: mongodb-bak
+  tags: mongodb-bak
