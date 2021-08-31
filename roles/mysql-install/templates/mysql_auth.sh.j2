@@ -1,0 +1,3 @@
+#!/bin/bash
+
+mysql -uroot -hlocalhost  --connect-expired-password -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock  -p'{{default_passwd.stdout}}' < /data/apps/mysql/mysql_init.sql

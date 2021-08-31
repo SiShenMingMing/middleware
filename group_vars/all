@@ -1,0 +1,16 @@
+############ 通用配置 ############
+
+# yonbip-middleware 项目根目录
+BASE_DIR: /data/jobs/yonbip-middleware
+
+
+############ Mysql ############
+
+# mysql 安装目录
+MYSQL_DIR: /data/apps/mysql
+
+
+############ Postgresql ########
+
+# Postgresql 安装目录
+PG_DIR: /data/apps/postgresql

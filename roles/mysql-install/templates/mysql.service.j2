@@ -1,0 +1,16 @@
+# /usr/lib/systemd/system/mysql{{MYSQL_PORT}}.service
+[Unit]
+Description=MySQL Server
+Documentation=man:mysqld(8)
+Documentation=http://dev.mysql.com/doc/refman/en/using-systemd.html
+After=network.target
+After=syslog.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=mysql
+Group=mysql
+ExecStart=/usr/local/mysql/bin/mysqld_safe   --defaults-file=/data/apps/mysql/mysql{{ MYSQL_PORT }}/my.cnf
+LimitNOFILE = 65535

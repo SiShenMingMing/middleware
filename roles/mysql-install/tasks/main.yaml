@@ -1,0 +1,118 @@
+  # 检查服务是否安装
+  # - name: check mysql
+  #   shell: netstat -ntl | grep 3306
+
+  - name: unarchive mysql_5.7_bin.tar.gz to mysql-server
+    unarchive:
+      src: "{{BASE_DIR}}/packages/middleware/mysql//mysql_5.7_bin.tar.gz"
+      dest: /usr/local/
+      copy: yes
+
+  - name: group add mysql
+    group: name=mysql
+    
+  - name: user add mysql
+    user:
+      name: mysql
+      groups: mysql
+      shell: /sbin/nologin
+      state: present
+
+  - name: create mysql workdir
+    file:
+      path: "{{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}"
+      state: directory
+      owner: mysql
+      group: mysql
+
+  - name: create mysql logs dir
+    file:
+      path: "{{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/{{ item }}"
+      state: directory
+      owner: mysql
+      group: mysql
+    with_items:
+      - logs
+      - tmp
+
+  # 创建软链接，方便后续升级
+  - name: create softlink for /usr/local/mysql
+    file: 
+      src: /usr/local/mysql-5.7
+      dest: /usr/local/mysql
+      state: link
+      force: yes
+
+  - name: make sure excute right 
+    shell: chmod +x /usr/local/mysql-5.7/bin/* 
+
+  - name: add path for mysql
+    copy: 
+      src: mysql.sh
+      dest: /etc/profile.d/mysql.sh
+      mode: 0755
+
+  - name: active env
+    shell: source /etc/profile
+
+  - name: copy my.cnf
+    template: 
+      src: my.cnf.j2
+      dest: "/data/apps/mysql/mysql{{ MYSQL_PORT }}/my.cnf"
+
+  - name: copy mysql.service
+    template:
+      src: mysql.service.j2
+      dest: "/usr/lib/systemd/system/mysql{{ MYSQL_PORT }}.service"
+
+  - name: daemon_reload
+    systemd: 
+      daemon_reload: yes    
+
+  - name: enable mysql service
+    systemd:
+      name: "mysql{{ MYSQL_PORT }}"
+      state: started
+      enabled: yes
+
+
+  # 初始化数据库，获取初始密码
+  - name: init mysql
+    shell: "mysqld --defaults-file=/data/apps/mysql/mysql{{ MYSQL_PORT }}/my.cnf  --initialize  --user=mysql"
+
+  - name: get root passwd  
+    shell: grep "password" /data/apps/mysql/mysql{{ MYSQL_PORT }}/logs/error.log | awk '{print $NF}' | head -n1
+    register: default_passwd
+
+  - name: echo passwd
+    debug: var=default_passwd.stdout
+    
+  - name: restart mysql
+    systemd:
+      name: "mysql{{ MYSQL_PORT }}"
+      state: restarted
+
+
+  # 设置自定义权限和密码
+  - name: copy init.sql to remote
+    copy:
+      src: files/mysql_init.sql
+      dest: /data/apps/mysql/mysql_init.sql
+      mode: 0755
+
+  - name: copy mysql_auth.sh
+    template:
+      src: mysql_auth.sh.j2
+      dest: "/data/apps/mysql/mysql{{MYSQL_PORT }}_auth.sh"
+      mode: 0755
+
+      
+  # - name: init mysql
+  #   shell: cd /data/apps/mysql && ./mysql_auth.sh
+
+  # - name: init mysql
+ #    shell: "mysql -uroot -hlocalhost  --connect-expired-password -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock  -p'{{default_passwd.stdout}}'"
+
+  # - name: init mysql
+  #   shell: "cd /data/apps/mysql && mysql -uroot -hlocalhost  --connect-expired-password -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock -p'{{default_passwd.stdout}}' -e 'show databases;'"
+       

@@ -1,0 +1,85 @@
+  - name: postgresql-12.0-bin.tar.gz to remote server
+    unarchive:
+      src: "{{BASE_DIR}}/packages/middleware/postgresql/postgresql-12.0-bin.tar.gz"
+      dest: /usr/local/
+      copy: yes
+
+  # 创建软链接，方便后续升级
+  - name: create softlink for /usr/local/postgresql
+    file: 
+      src: /usr/local/postgresql-12.0
+      dest: /usr/local/postgresql
+      state: link
+      force: yes
+
+  - name: add path for postgresql
+    copy: 
+      src: postgresql.sh
+      dest: /etc/profile.d/postgresql.sh
+      mode: 0755
+
+  - name: active env
+    shell: source /etc/profile
+
+  # 创建postgres用户
+  - name: group add postgres
+    group: name=postgres
+    
+  - name: user add postgres
+    user:
+      name: postgres
+      groups: postgres
+      shell: /bin/bash
+      state: present
+
+  - name: create postgres workdir
+    file:
+      path: "{{ PG_DIR }}"
+      state: directory
+      owner: postgres
+      group: postgres
+
+  - name: create postgres data dir
+    file:
+      path: "{{ PG_DIR }}/{{ item }}"
+      state: directory
+      owner: postgres
+      group: postgres
+    with_items:
+      - logs
+      - data
+
+
+  #pg初始化和配置修改
+  - name: pg init
+    shell: pg_ctl init -D {{PG_DIR}}/data
+    become: yes
+    become_method: su
+    become_user: postgres
+         
+
+  - name: update config
+    shell: |
+          sed -i "/^#listen_addresses/c listen_addresses = '*'"  {{PG_DIR}}/data/postgresql.conf
+          sed -i "/^#port/c port = 5432"  {{PG_DIR}}/data/postgresql.conf
+          sed -i "/^max_connections/c max_connections = 2000"  {{PG_DIR}}/data/postgresql.conf
+          echo "host    all    all   0.0.0.0/0    md5" >> {{PG_DIR}}/data/pg_hba.conf
+
+
+  - name: copy postgresql.service
+    template:
+      src: postgresql.service.j2
+      dest: "/usr/lib/systemd/system/postgresql.service"
+
+  - name: daemon_reload
+    systemd: 
+      daemon_reload: yes    
+
+  - name: enable postgresql service
+    systemd:
+      name: postgresql
+      state: started
+      enabled: yes
+
+  - name: update postgresql user postgres passwd
+    shell: /usr/local/postgresql/bin/psql -U postgres -p 5432 -c "ALTER USER postgres WITH PASSWORD 'yonbip2021root!';"
