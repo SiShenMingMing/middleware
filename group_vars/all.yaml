@@ -1,7 +1,7 @@
 ############ 通用配置 ############
 
-# yonbip-middleware 项目根目录
-BASE_DIR: /data/jobs/yonbip-middleware
+# yonbip-middleware 工具所在目录
+PACKAGES_DIR: /data/jobs/yonbip-middleware
 
 
 ############ Mysql ############
@@ -19,3 +19,9 @@ ro_all_db_pass: yonbip2021user!
 
 # Postgresql 安装目录
 PG_DIR: /data/apps/postgresql
+
+PG_PORT: 5432
+
+PG_PASS: yonbip2021root!
+
+

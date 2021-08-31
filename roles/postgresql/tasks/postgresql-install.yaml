@@ -1,6 +1,6 @@
   - name: postgresql-12.0-bin.tar.gz to remote server
     unarchive:
-      src: "{{BASE_DIR}}/packages/middleware/postgresql/postgresql-12.0-bin.tar.gz"
+      src: "{{PACKAGES_DIR}}/packages/middleware/postgresql/postgresql-12.0-bin.tar.gz"
       dest: /usr/local/
       copy: yes
 
@@ -82,4 +82,4 @@
       enabled: yes
 
   - name: update postgresql user postgres passwd
-    shell: /usr/local/postgresql/bin/psql -U postgres -p 5432 -c "ALTER USER postgres WITH PASSWORD 'yonbip2021root!';"
+    shell: /usr/local/postgresql/bin/psql -U postgres -p 5432 -c "ALTER USER postgres WITH PASSWORD '{{PG_PASS}}';"

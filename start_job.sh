@@ -13,12 +13,14 @@ function diyecho(){
 function usage(){
     case $1 in
         mysql)
-            diyecho "用法:\n start_job.sh  mysql  [选项] ... [参数] ...\n\n选项列表:" $ECHO_COLOR
-            diyecho " mysql-install [端口号]\n"  $ECHO_COLOR
+            diyecho "用法:\n mysql-install [端口号]\n"  $ECHO_COLOR
+            diyecho " mysql-uninstall [端口号]\n"  $ECHO_COLOR
             diyecho "例子:\n start_job.sh  mysql mysql-install 3306"  $ECHO_COLOR
             diyecho "例子:\n start_job.sh  mysql mysql-uninstall 3306"  $ECHO_COLOR
         ;;
         postgresql)
+            diyecho "用法:\n postgresql-install \n"  $ECHO_COLOR
+            diyecho "例子:\n start_job.sh postgresql postgresql-install"  $ECHO_COLOR   
         ;;
         *)
             diyecho "作用:\n 初始化服务器及部署指定middleware\n"  $ECHO_COLOR
@@ -48,14 +50,11 @@ case $1 in
   postgresql)
       case $2 in
       postgresql-install)
-          ansible-playbook --tags=postgresql-install -i hosts main.yaml
-      ;;
-      postgresql-bak)
-          ansible-playbook --tags=postgresql-bak -e "ENV=$3"  -i hosts main.yaml
+          ansible-playbook --tags=postgresql-install -i inventory/hosts.ini main.yaml
       ;;
      *)
-      echo "Usage: ./start_job.sh postgresql [postgresql-install | postgresql-bak C0519[ENV] ] "
-      exit 1
+       usage postgresql
+       exit 1
      ;;
      esac
   ;;

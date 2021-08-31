@@ -30,15 +30,11 @@
 #   tags: mysql-bak
 
 
-# 安装pg数据库
-# - hosts: postgresql
-#   gather_facts: no
-#   vars:
-#     PG_PORT: 5432
-#     PG_DIR: /data/apps/postgresql
-#   roles:
-#   - role: postgresql-install
-#   tags: postgresql-install
+## 安装pg数据库
+- hosts: postgresql
+  gather_facts: no
+  roles:
+  - { role: postgresql, action: postgresql-install, tags: postgresql-install }
 
 
 

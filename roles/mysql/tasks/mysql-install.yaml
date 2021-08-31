@@ -4,7 +4,7 @@
 
   - name: unarchive mysql_5.7_bin.tar.gz to mysql-server
     unarchive:
-      src: "{{BASE_DIR}}/packages/middleware/mysql//mysql_5.7_bin.tar.gz"
+      src: "{{PACKAGES_DIR}}/packages/middleware/mysql//mysql_5.7_bin.tar.gz"
       dest: /usr/local/
       copy: yes
 
