@@ -58,7 +58,7 @@
   - name: copy my.cnf
     template: 
       src: my.cnf.j2
-      dest: "/data/apps/mysql/mysql{{ MYSQL_PORT }}/my.cnf"
+      dest: "{{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/my.cnf"
 
   - name: copy mysql.service
     template:
@@ -77,11 +77,11 @@
 
 
   # 初始化数据库，获取初始密码
-  - name: init mysql
-    shell: "mysqld --defaults-file=/data/apps/mysql/mysql{{ MYSQL_PORT }}/my.cnf  --initialize  --user=mysql"
+  - name: initialize mysql
+    shell: "mysqld --defaults-file={{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/my.cnf  --initialize  --user=mysql"
 
   - name: get root passwd  
-    shell: grep "password" /data/apps/mysql/mysql{{ MYSQL_PORT }}/logs/error.log | awk '{print $NF}' | head -n1
+    shell: grep "password" {{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/logs/error.log | awk '{print $NF}' | head -n1
     register: default_passwd
 
   - name: echo passwd
@@ -95,24 +95,25 @@
 
   # 设置自定义权限和密码
   - name: copy init.sql to remote
-    copy:
-      src: files/mysql_init.sql
-      dest: /data/apps/mysql/mysql_init.sql
+    template:
+      src: mysql_init.sql.j2
+      dest: "{{ MYSQL_DIR }}/mysql_init.sql"
       mode: 0755
+
 
   - name: copy mysql_auth.sh
     template:
       src: mysql_auth.sh.j2
-      dest: "/data/apps/mysql/mysql{{MYSQL_PORT }}_auth.sh"
+      dest: "{{ MYSQL_DIR }}/mysql{{MYSQL_PORT }}_auth.sh"
       mode: 0755
 
       
-  # - name: init mysql
-  #   shell: cd /data/apps/mysql && ./mysql_auth.sh
+  - name: init mysql
+    shell: "cd {{ MYSQL_DIR }} && bash mysql{{MYSQL_PORT }}_auth.sh"
+    ignore_errors: true
 
-  # - name: init mysql
- #    shell: "mysql -uroot -hlocalhost  --connect-expired-password -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock  -p'{{default_passwd.stdout}}'"
+    
 
-  # - name: init mysql
-  #   shell: "cd /data/apps/mysql && mysql -uroot -hlocalhost  --connect-expired-password -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock -p'{{default_passwd.stdout}}' -e 'show databases;'"
+  - name: check mysql
+    shell: "cd {{ MYSQL_DIR }} && mysql -uroot -hlocalhost  --connect-expired-password -S {{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/data/mysql.sock -p'{{root_pass}}' -e 'show databases;'"
        
