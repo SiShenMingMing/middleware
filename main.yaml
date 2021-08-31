@@ -10,8 +10,14 @@
 - hosts: mysql
   gather_facts: no
   roles:
-  - role: mysql-install
-  tags: mysql-install
+  - { role: mysql, action: mysql-install, tags: mysql-install }
+
+## 卸载数据库
+- hosts: mysql
+  gather_facts: no
+  roles:
+  - { role: mysql, action: mysql-uninstall, tags: mysql-uninstall }
+
 
 
 # #备份数据库

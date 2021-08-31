@@ -1,0 +1,7 @@
+- include_tasks: mysql-install.yaml
+  tags: mysql-install
+  when: action == "mysql-install"
+
+- include_tasks: mysql-uninstall.yaml
+  tags: mysql-uninstall
+  when: action == "mysql-uninstall"

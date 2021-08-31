@@ -16,16 +16,16 @@ function usage(){
             diyecho "用法:\n start_job.sh  mysql  [选项] ... [参数] ...\n\n选项列表:" $ECHO_COLOR
             diyecho " mysql-install [端口号]\n"  $ECHO_COLOR
             diyecho "例子:\n start_job.sh  mysql mysql-install 3306"  $ECHO_COLOR
+            diyecho "例子:\n start_job.sh  mysql mysql-uninstall 3306"  $ECHO_COLOR
         ;;
         postgresql)
         ;;
-        *)  
+        *)
             diyecho "作用:\n 初始化服务器及部署指定middleware\n"  $ECHO_COLOR
             diyecho "用法:\n start_job.sh  [选项] ... [参数] ...\n\n选项列表:"  $ECHO_COLOR
             diyecho "mysql       -- mysql工具"  $ECHO_COLOR
             diyecho "postgresql  -- postgresql工具"  $ECHO_COLOR
         esac
-
 }
 
 
@@ -34,11 +34,14 @@ case $1 in
   mysql)
      case $2 in
       mysql-install)
-          ansible-playbook --tags=mysql-install -v -e "MYSQL_PORT=$3" -i inventory/hosts.ini main.yaml
+          ansible-playbook --tags mysql-install   -v   -e "MYSQL_PORT=$3" -i inventory/hosts.ini main.yaml
       ;;
-     *)
-      usage mysql
-      exit 1
+      mysql-uninstall)
+          ansible-playbook --tags mysql-uninstall -v -e "MYSQL_PORT=$3" -i inventory/hosts.ini main.yaml
+      ;;
+      *)
+        usage mysql
+        exit 1
      ;;
      esac
   ;;  

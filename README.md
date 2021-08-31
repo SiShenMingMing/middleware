@@ -30,9 +30,14 @@ yonbip 数据库中间件部署和运维管理
 
 
 ├── group_vars
+
 ├── inventory
+
 ├── README.md
+
 └── roles
 
 
 ## 使用步骤
+    chmod +x start_job.sh
+    bash start_job.sh

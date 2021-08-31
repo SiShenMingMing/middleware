@@ -1,0 +1,9 @@
+  - name: stop mysql service
+    systemd:
+      name: "mysql{{ MYSQL_PORT }}"
+      state: stopped
+
+  - name: delete directory
+    file:
+      path: "{{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}"
+      state: absent    

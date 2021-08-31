@@ -108,12 +108,12 @@
       mode: 0755
 
       
-  - name: init mysql
-    shell: "cd {{ MYSQL_DIR }} && bash mysql{{MYSQL_PORT }}_auth.sh"
-    ignore_errors: true
+  # - name: init mysql
+  #   shell: "cd {{ MYSQL_DIR }} && bash mysql{{MYSQL_PORT }}_auth.sh"
+  #   delegate_to: "{{ groups['mysql']|first }}"
+  #   ignore_errors: true
 
     
-
-  - name: check mysql
-    shell: "cd {{ MYSQL_DIR }} && mysql -uroot -hlocalhost  --connect-expired-password -S {{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/data/mysql.sock -p'{{root_pass}}' -e 'show databases;'"
-       
+  # - name: check mysql
+  #   shell: "cd {{ MYSQL_DIR }} && mysql -uroot -hlocalhost  --connect-expired-password -S {{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}/data/mysql.sock -p'{{root_pass}}' -e 'show databases;'"
+  #   delegate_to: "{{ groups['mysql']|first }}"   
