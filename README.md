@@ -50,11 +50,12 @@ yonbip 数据库中间件部署和运维管理
 
 2)  在inventory目录下修改对应中间件的ini主机清单文件
 
-3)  
-    chmod +x start_job.sh
-    bash start_job.sh
+3)  执行start_job.sh
 
-输出：
+        chmod +x start_job.sh
+        bash start_job.sh
+
+        输出如下：
 
         作用:
          初始化服务器及部署指定middleware
