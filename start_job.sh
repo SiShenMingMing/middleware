@@ -4,7 +4,7 @@
 ECHO_COLOR=35
 
 
-# 打印眼熟
+# 打印颜色
 function diyecho(){
 	echo -e "\033[0;$2m$1 \033[0m"
 }
