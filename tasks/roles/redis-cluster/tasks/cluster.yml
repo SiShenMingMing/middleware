@@ -1,0 +1,99 @@
+---
+- name: create cluster working directory
+  file:
+    path: "{{ middleware_dir }}/redis-cluster-{{ item }}/data"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+
+- name: create cluster systemd service
+  template:
+    src: default/redis_cluster.service.j2
+    dest: "/usr/lib/systemd/system/redis-cluster-{{ item }}.service"
+    mode: '0644'
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+  register: cluster_unit_file
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - cluster_unit_file is changed
+
+- name: set cluster to start at boot
+  service:
+    name: "redis-cluster-{{ item }}"
+    enabled: yes
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+
+- name: create cluster config file
+  template:
+    src: templates/redis_cluster.conf.j2
+    dest: "{{ middleware_dir }}/redis-cluster-{{ item }}/conf/redis_cluster_{{ item }}.conf"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+  notify: "restart cluster"
+
+# Flush handlers before ensuring the service is started to prevent
+# a start and then restart
+- name: flush handlers to apply config changes
+  meta: flush_handlers
+
+- name: ensure cluster is running
+  service:
+    name: redis-cluster-{{ item }}
+    state: started
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+
+- name: exec scripts nodes num
+  shell: "echo {{ groups['redis-cluster']|length -1 }}"
+  register: exec_scripts_nodes_num
+
+- name: checking cluster nodes
+  shell: "[ $({{ middleware_dir }}/redis-cluster-{{ redis_master_port }}/bin/redis-cli -p {{ redis_master_port }} {% if redis_cluster_password -%}-a {{ redis_cluster_password }} {% endif -%} cluster nodes 2>&1 | grep connected | wc -l) -ge '3' ]"
+  register: motd_cluster_nodes
+  when:
+    - "inventory_hostname == groups['redis-cluster'][exec_scripts_nodes_num.stdout|int]"
+  ignore_errors: True
+
+- name: upload add_cluster.sh
+  template:
+    src: templates/scripts/add_cluster.sh.j2
+    dest: "{{ temp_dir }}/add_cluster.sh"
+    mode: '0755'
+  when:
+    - "inventory_hostname == groups['redis-cluster'][exec_scripts_nodes_num.stdout|int]"
+    - motd_cluster_nodes is failed
+
+- name: install expect
+  yum:
+    name: expect
+    state: latest
+  when:
+    - "inventory_hostname == groups['redis-cluster'][exec_scripts_nodes_num.stdout|int]"
+    - motd_cluster_nodes is failed
+
+- name: create redis cluster
+  shell: "{{ temp_dir }}/add_cluster.sh"
+  when:
+    - "inventory_hostname == groups['redis-cluster'][exec_scripts_nodes_num.stdout|int]"
+    - motd_cluster_nodes is failed
+
+- name: ensure cluster is running
+  shell: "[ $({{ middleware_dir }}/redis-cluster-{{ redis_master_port }}/bin/redis-cli -p {{ redis_master_port }} {% if redis_cluster_password -%}-a {{ redis_cluster_password }} {% endif -%} cluster nodes 2>&1 | grep connected | wc -l) -ge '3' ]"
+  register: motd_cluster_nodes
+  when:
+    - "inventory_hostname == groups['redis-cluster'][exec_scripts_nodes_num.stdout|int]"

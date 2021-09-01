@@ -1,0 +1,4 @@
+---
+
+base_dir: /data/iuap
+middlewareDir: "{{ base_dir }}/middleware"

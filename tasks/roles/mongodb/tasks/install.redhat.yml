@@ -1,0 +1,131 @@
+---
+
+- name: Establish some role-related facts
+  set_fact:
+    mongodb_major_version: "{{ mongodb_version[0:3] }}"
+
+#- name: Install EPEL release repository
+#  package:
+#    name: epel-release
+#    state: present
+#
+#- name: Add YUM repository
+#  template:
+#    src: mongodb.repo.j2
+#    dest: /etc/yum.repos.d/mongodb.repo
+#    mode: 0644
+#  with_items: "{{ mongodb_major_version }}"
+#  loop_control:
+#    loop_var: version_item
+#  when: mongodb_package == 'mongodb-org'
+#
+#- name: Install MongoDB package
+#  yum:
+#    name: "{{ mongodb_package }}{% if (mongodb_version | length > 3) %}={{ mongodb_version }}{% endif %}"
+#    state: "{{ mongodb_package_state }}"
+
+- name: Change file ownership, group and permissions
+  file:
+    path: /opt/mongodb/rpm
+    state: directory
+    owner: root
+    group: root
+    mode: '0644'
+
+- debug:
+    var: role_path
+  run_once: true
+
+
+- debug:
+    var: nexus_url is defined  and nexus_url != ""
+  run_once: true
+
+# - name: Get package from url
+#   get_url: url={{ files_url }}/{{ line_item }} dest={{ role_path }}/files/{{ line_item }}
+#   with_items:
+#     - mongodb-org-{{ mongodb_version }}-1.el7.x86_64.rpm
+#     - mongodb-org-mongos-{{ mongodb_version }}-1.el7.x86_64.rpm
+#     - mongodb-org-server-{{ mongodb_version }}-1.el7.x86_64.rpm
+#     - mongodb-org-shell-{{ mongodb_version }}-1.el7.x86_64.rpm
+#     - mongodb-org-tools-{{ mongodb_version }}-1.el7.x86_64.rpm
+#     - pymongo-3.7.1-cp27-cp27mu-manylinux1_x86_64.whl
+#   ignore_errors: true
+#   when: nexus_url != ""
+#   connection: local
+#   run_once: true
+#   loop_control:
+#     loop_var: line_item
+
+
+
+
+
+- name: redhat | upload Mongo
+  copy:
+    src: "{{PACKAGES_DIR}}/packages/middleware/mongodb/{{ line_item }}"
+    dest: "/opt/mongodb/rpm/{{ line_item }}"
+  become: true
+  with_items:
+    - mongodb-org-{{ mongodb_version }}-1.el7.x86_64.rpm
+    - mongodb-org-mongos-{{ mongodb_version }}-1.el7.x86_64.rpm
+    - mongodb-org-server-{{ mongodb_version }}-1.el7.x86_64.rpm
+    - mongodb-org-shell-{{ mongodb_version }}-1.el7.x86_64.rpm
+    - mongodb-org-tools-{{ mongodb_version }}-1.el7.x86_64.rpm
+  loop_control:
+    loop_var: line_item
+
+- name: Find all rpm files in folder
+  find:
+    paths: /opt/mongodb/rpm
+    pattern: "*.rpm"
+  register: rpm_files
+
+- name: redhat | installing Mongo
+  yum:
+    name: "{{ rpm_files.files | map(attribute='path') | list}}"
+    state: present
+  become: true
+  register: result
+  until: result is successful
+#  with_items:
+#    - mongodb-org-{{ mongodb_version }}-1.el7.x86_64.rpm
+#    - mongodb-org-mongos-{{ mongodb_version }}-1.el7.x86_64.rpm
+#    - mongodb-org-server-{{ mongodb_version }}-1.el7.x86_64.rpm
+#    - mongodb-org-shell-{{ mongodb_version }}-1.el7.x86_64.rpm
+#    - mongodb-org-tools-{{ mongodb_version }}-1.el7.x86_64.rpm
+
+
+- name: Install numactl package
+  yum:
+    name: numactl
+    state: present
+
+- name: Install PyMongo package
+  yum:
+    name: python-pymongo
+    state: present
+  when: not mongodb_pymongo_from_pip | bool
+
+- name: Install PIP
+  yum:
+    name:
+      - python-devel
+      - python-pip
+  when: mongodb_pymongo_from_pip | bool
+
+- name: Create tmp dir
+  file: path=/tmp/mongo_packages state=directory mode=0755
+  when: mongodb_pymongo_from_pip | bool
+
+- name: Upload mongo packages
+  copy: src={{PACKAGES_DIR}}/packages/middleware/mongodb/{{ pymongo_file }} dest=/tmp/mongo_packages/{{pymongo_file}}
+  when: mongodb_pymongo_from_pip | bool
+
+- name: Install PyMongo from PIP
+  pip:
+    name: pymongo
+    state: "{{ mongodb_pymongo_pip_version is defined | ternary('present', 'latest') }}"
+    version: "{{ mongodb_pymongo_pip_version | default(omit) }}"
+    extra_args: "--no-index --find-links=file:///tmp/mongo_packages"
+  when: mongodb_pymongo_from_pip | bool

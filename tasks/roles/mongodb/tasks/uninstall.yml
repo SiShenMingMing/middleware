@@ -1,0 +1,40 @@
+- name: Create backup path
+  file: path={{ middleware_bak }} state=directory
+
+- name: Backup data
+  shell: |
+    mongodump -h {{ inventory_hostname }} --port {{ mongodb_net_port }} -u {{ mongodb_root_admin_name }} -p {{ mongodb_root_admin_password }} -o {{ middleware_bak }}/mongdb-{{ mongodb_net_port }}.{{ ansible_date_time.iso8601 }}.bak
+  ignore_errors: true
+
+- name: Stop mongod
+  service: name={{ mongodb_daemon_name }} state=stopped enabled=no
+  ignore_errors: true
+
+- name: redhat | uninstall Mongo
+  yum:
+    name:
+      - mongodb-org-tools
+      - mongodb-org-shell
+      - mongodb-org-mongos
+      - mongodb-org-server
+      - mongodb-org
+    state: absent
+  register: result
+  until: result is successful
+  ignore_errors: true
+
+- name: Uninstall mongodb
+  file: state=absent path={{ item }}
+  with_items:
+  - /opt/mongodb/rpm/
+  - /etc/mongod.conf
+  - "{{ mongodb_storage_dbpath }}"
+  ignore_errors: true
+
+- name: Uninstall PyMongo from PIP
+  pip:
+    name: pymongo
+    state: absent
+  when: mongodb_pymongo_from_pip | bool
+  ignore_errors: true
+

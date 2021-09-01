@@ -1,0 +1,6 @@
+- include: mysql-install.yaml
+  tags: mysql-install
+
+
+- include: mysql-uninstall.yaml
+  tags: mysql-uninstall

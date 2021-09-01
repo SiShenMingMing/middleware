@@ -1,0 +1,12 @@
+---
+- name: "Check if Java is installed"
+  shell: java -version
+  register: check_java
+  ignore_errors: True
+  changed_when: False
+  check_mode: False
+
+- name: "Install OpenJDK"
+  include_role:
+    name: common/jdk
+  when: check_java.rc != 0

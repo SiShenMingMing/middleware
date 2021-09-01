@@ -1,0 +1,6 @@
+---
+
+## zookeeper 管理  inventory/zookeeper.ini
+- hosts: zookeeper-host
+  roles:
+  - { role: zookeeper }

@@ -1,0 +1,3 @@
+---
+- name: restart elasticsearch
+  systemd: state=restarted name=elasticsearch-{{ES_PORT1}}

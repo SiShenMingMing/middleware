@@ -1,0 +1,9 @@
+---
+
+## kafka 管理  inventory/kafka.ini
+- hosts: kafka
+  vars:
+    kafka_hosts: "{{ groups.kafka | list }}"
+    kafka_zookeeper_hosts: "{{ groups['zookeeper-host'] | list }}"
+  roles:
+  - { role: kafka }

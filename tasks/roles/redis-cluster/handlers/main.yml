@@ -1,0 +1,18 @@
+---
+- name: "restart redis"
+  service:
+    name: "{{ redis_service_name }}"
+    state: restarted
+
+- name: "restart sentinel"
+  service:
+    name: "redis-sentinel-{{ redis_sentinel_port }}"
+    state: restarted
+
+- name: "restart cluster"
+  service:
+    name: "redis-cluster-{{ item }}"
+    state: restarted
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"

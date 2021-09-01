@@ -1,0 +1,4 @@
+---
+# 停止服务
+- name: stop service
+  service: name="rabbitmq-server-{{ rabbitmq_port }}" state=stopped

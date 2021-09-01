@@ -1,0 +1,15 @@
+---
+- include: install.yml
+  tags: nginx-install
+
+- include: check_status.yml
+  tags: nginx-check_status
+
+- include: stop.yml
+  tags: nginx-stop
+
+- include: restart.yml
+  tags: nginx-restart
+
+- include: uninstall.yml
+  tags: nginx-uninstall

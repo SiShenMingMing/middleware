@@ -1,0 +1,3 @@
+---
+- name: Stop elasticsearch
+  systemd: state=stopped name=elasticsearch-{{ES_PORT1}}

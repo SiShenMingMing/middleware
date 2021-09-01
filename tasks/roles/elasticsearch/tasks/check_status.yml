@@ -1,0 +1,14 @@
+---
+- name: check status elasticsearch
+  shell: systemctl status elasticsearch-{{ES_PORT1}} |grep 'active (running)'
+  ignore_errors: true
+  register: status
+
+- debug:
+    msg: "elasticsearch-{{ES_PORT1}} is running."
+  when: status.rc == 0
+
+- debug:
+    msg: "elasticsearch-{{ES_PORT1}} is stopped."
+  when: status.rc > 0
+

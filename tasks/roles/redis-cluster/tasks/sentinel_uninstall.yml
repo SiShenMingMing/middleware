@@ -1,0 +1,39 @@
+---
+- name: check sentinel systemd service
+  shell: "ls /usr/lib/systemd/system/redis-sentinel-{{ item }}.service > /dev/null 2>&1; echo $?"
+  with_items:
+    - "{{ redis_sentinel_port }}"
+  register: check_sentinel_service
+  when:
+    - redis_sentinel_port is defined
+  ignore_errors: True
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - check_sentinel_service is defined
+
+- name: stop sentinel systemd service
+  service:
+    name: "redis-sentinel-{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ redis_sentinel_port }}"
+  when:
+    - check_sentinel_service.results[0].stdout == "0"
+
+- name: delete sentinel systemd service
+  file:
+    path: "/usr/lib/systemd/system/redis-sentinel-{{ item }}.service"
+    state: absent
+  with_items: "{{ redis_sentinel_port }}"
+  when:
+    - check_sentinel_service.results[0].stdout == "0"
+
+- name: delete sentinel directory
+  file:
+    path: "{{ middleware_dir }}/redis-sentinel-{{ item }}"
+    state: absent
+  with_items: "{{ redis_sentinel_port }}"
+  when:
+    - check_sentinel_service.results[0].stdout == "0"

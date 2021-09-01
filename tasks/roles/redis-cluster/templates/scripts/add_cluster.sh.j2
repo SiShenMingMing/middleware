@@ -1,0 +1,18 @@
+#!/bin/bash
+{{ ansible_managed | comment }}
+# create redis cluster
+# AUTHOR? yuhym
+# EXECUTE: bash ./add_cluster.sh
+# CREATED: 2020.02.18
+# MODIFED: 2020.02.18
+
+expect <<- EOF
+set timeout 30
+spawn {{ middleware_dir }}/redis-cluster-{{ redis_master_port }}/bin/redis-cli \
+    --cluster-replicas {{ redis_cluster_replicas }} \
+    {% if redis_cluster_password -%} -a {{ redis_cluster_password }} {% endif -%} --cluster create {% for item in play_hosts %}{{item}}:{{redis_master_port}} {{item}}:{{redis_slave_port}} {% endfor %}
+
+expect {
+    "(type 'yes' to accept)" {send "yes\r";exp_continue}
+}
+EOF

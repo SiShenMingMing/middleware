@@ -1,0 +1,107 @@
+user nginx;
+worker_processes  auto;
+pid /run/nginx.pid;
+
+events {
+    use epoll;
+    worker_connections  20480;
+    multi_accept on;
+    accept_mutex on;
+}
+
+stream {
+    include sites-enabled/*.stream;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr|$remote_user|[$time_local]|"$request"|'
+                      '$status|$body_bytes_sent|$http_host|"$http_referer"|'
+                      '"$http_user_agent"|$http_x_forwarded_for|$upstream_cache_status|'
+                      '"$upstream_http_content_type"|$request_time|$upstream_response_time|$bytes_sent|$request_length|'
+                      '"$upstream_addr"|$uuid|$span_id';
+
+    access_log {{ middleware_logs }}/nginx/access.log  main;
+    error_log {{ middleware_logs }}/nginx/error.log notice;
+
+    sendfile        on;
+    keepalive_timeout  65;
+
+    charset utf-8;
+    server_tokens off;
+    server_names_hash_bucket_size 128;
+    client_header_buffer_size 32k;
+    large_client_header_buffers 4 32k;
+    client_max_body_size 800m;
+    tcp_nopush on;
+
+    underscores_in_headers on;
+    client_body_buffer_size 512k;
+    proxy_headers_hash_max_size 51200;
+    proxy_headers_hash_bucket_size 6400;
+    proxy_connect_timeout 5;
+    proxy_read_timeout 60;
+    proxy_send_timeout 5;
+    proxy_buffer_size 16k;
+    proxy_buffers 4 64k;
+    proxy_busy_buffers_size 128k;
+    proxy_temp_file_write_size 128k;
+    proxy_temp_path {{ middleware_path }}/nginx/proxy_temp;
+    proxy_cache_path {{ middleware_path }}/nginx/proxy_cache levels=1:2 keys_zone=content:20m inactive=1d max_size=100m;
+    proxy_cache_path {{ middleware_path }}/nginx/proxy_cache_image levels=1:2 keys_zone=content_image:20m inactive=1d max_size=100m;
+    proxy_cache_bypass $http_secret_header;
+    proxy_ignore_client_abort on;
+
+    vhost_traffic_status_zone;
+    vhost_traffic_status_filter_by_host on;
+
+    gzip on;
+    gzip_min_length 1k;
+    gzip_buffers 4 16k;
+    gzip_http_version 1.0;
+    gzip_comp_level 2;
+    gzip_types text/plain application/x-javascript application/javascript text/css;
+    gzip_vary on;
+
+    lua_package_path "/data/iuap/middleware/nginx/lualib/?.lua;;";
+    init_by_lua '
+        require "resty.core"
+        uuid4 = require "uuid4"
+    ';
+
+    # include conf.d/*.conf;
+    include sites-enabled/*.conf;
+
+    server {
+        listen     4040 default;
+        access_log off;
+
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+            allow 127.0.0.1;
+{% for ip in ansible_all_ipv4_addresses %}
+            allow {{ ip }};
+{% endfor %}
+            deny all;
+
+        set_by_lua $uuid '
+            if ngx.var.http_X_traceId == nil then
+                return string.sub(ngx.var.request_id,17,-1)
+            else
+                return ngx.var.http_X_traceId
+            end
+        ';
+
+        set_by_lua $span_id '
+            if ngx.var.http_X_spanId == nil then
+                return ngx.var.uuid
+            else
+                return ngx.var.http_X_spanId
+            end
+        ';
+        }
+    }
+}

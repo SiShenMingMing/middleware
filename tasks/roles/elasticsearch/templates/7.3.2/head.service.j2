@@ -1,0 +1,15 @@
+[Unit]
+Description=Elasticsearch Head
+After=network.target
+
+[Service]
+Type=forking
+Restart=on-failure
+RestartSec=20
+User=elasticsearch
+Group=elasticsearch
+ExecStart=ExecStart={{es_dir}}/extend/elasticsearch-head/startup.sh
+
+
+[Install]
+WantedBy=multi-user.target

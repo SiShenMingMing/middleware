@@ -1,0 +1,146 @@
+---
+- name: check if redis user exists (ignore errors)
+  command: id {{ redis_user }}
+  ignore_errors: yes
+  changed_when: false
+  register: user_exists
+
+- name: add redis group
+  group:
+    name: "{{ redis_group }}"
+    state: present
+  when: user_exists is failed
+
+- name: add redis user
+  user:
+    name: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    comment: "Redis"
+    create_home: no
+    shell: /bin/false
+    system: yes
+  when: user_exists is failed
+
+# Check then create middleware dir to prevent aggressively overwriting permissions
+- name: check if middleware directory exists
+  stat:
+    path: "{{ middleware_dir }}"
+  register: middleware_data_dir
+  changed_when: false
+
+- name: create middleware install directory
+  file:
+    path: "{{ middleware_dir }}"
+    state: directory
+    mode: '0755'
+    recurse: yes
+  when:
+    - not middleware_data_dir.stat.exists
+
+- name: create redis install directory
+  file:
+    path: "{{ redis_install_dir }}"
+    state: directory
+    mode: '0755'
+  when: "'redis-master' in group_names or 'redis-slave' in group_names"
+
+- name: create {{ redis_install_dir }}/{bin,conf,log,run}
+  file:
+    path: "{{ redis_install_dir }}/{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+  with_items:
+    - bin
+    - conf
+    - log
+    - run
+  when: "'redis-master' in group_names or 'redis-slave' in group_names"
+
+- name: list redis binaries to add to bin
+  command: ls -1 {{ temp_dir }}/redis-{{ redis_version }}/bin
+  register: redis_binaries
+  changed_when: false
+
+- name: add redis binaries to bin
+  copy:
+    src: "{{ temp_dir }}/redis-{{ redis_version }}/bin/{{ item }}"
+    dest: "{{ redis_install_dir }}/bin/{{ item }}"
+    mode: '0755'
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    remote_src: yes
+  with_items: "{{ redis_binaries.stdout_lines }}"
+  when:
+    - redis_binaries is succeeded
+    - "'redis-master' in group_names or 'redis-slave' in group_names"
+
+- name: create sentinel install directory
+  file:
+    path: "{{ redis_sentinel_dir }}"
+    state: directory
+    mode: '0755'
+  when: "'redis-sentinel' in group_names"
+
+- name: create {{ redis_sentinel_dir }}/{bin,conf,log,run}
+  file:
+    path: "{{ redis_sentinel_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  with_items:
+    - bin
+    - conf
+    - log
+    - run
+  when: "'redis-sentinel' in group_names"
+
+- name: add sentinell binaries to bin
+  copy:
+    src: "{{ temp_dir }}/redis-{{ redis_version }}/bin/{{ item }}"
+    dest: "{{ redis_sentinel_dir }}/bin"
+    mode: '0755'
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    remote_src: yes
+  with_items: "{{ redis_binaries.stdout_lines }}"
+  when:
+    - redis_binaries is succeeded
+    - "'redis-sentinel' in group_names"
+
+- name: create cluster directory
+  file:
+    path: "{{ middleware_dir }}/redis-cluster-{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+  when:  "'redis-cluster' in group_names"
+
+- name: create {{ middleware_dir }}/redis-cluster/{bin,conf,log,run}
+  file:
+    path: "{{ middleware_dir }}/redis-cluster-{{ item[0] }}/{{ item[1] }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+  with_nested:
+    - [ "{{ redis_master_port }}","{{ redis_slave_port }}" ]
+    - [ 'bin','conf','log','run' ]
+  when:  "'redis-cluster' in group_names"
+
+- name: add cluster binaries to bin
+  copy:
+    src: "{{ temp_dir }}/redis-{{ redis_version }}/bin/{{ item[1] }}"
+    dest: "{{ middleware_dir }}/redis-cluster-{{ item[0] }}/bin/{{ item[1] }}"
+    mode: '0755'
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    remote_src: yes
+  with_nested:
+    - [ "{{ redis_master_port }}","{{ redis_slave_port }}" ]
+    - "{{ redis_binaries.stdout_lines }}"
+  when:  "'redis-cluster' in group_names"

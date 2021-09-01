@@ -1,0 +1,78 @@
+---
+- name: set es base dir
+  set_fact:
+    es_dir: "{{ middlewareDir }}/elasticsearch-{{ ES_VERSION }}-{{ ES_PORT1 }}"
+    es_plugins_dir: "{{ es_dir }}/plugins"
+    es_extend_dir: "{{ es_dir }}/extend"
+
+- name: create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ es_extend_dir }}/cerebro"
+    - "{{ es_plugins_dir }}/ik"
+    - "{{ es_extend_dir }}/node"
+    - "{{ es_extend_dir }}/head"
+
+- name: install es plugin
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    copy: yes
+    mode: "0755"
+  with_items:
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v5.6.2/cerebro-0.8.4.zip", dest: "{{ es_extend_dir }}/cerebro"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v5.6.2/node-v12.10.0-linux-x64.tar.gz", dest: "{{ es_extend_dir }}/node"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v5.6.2/elasticsearch-analysis-ik-5.6.2.zip", dest: "{{ es_plugins_dir }}/ik"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v5.6.2/elasticsearch-head.tar.gz", dest: "{{ es_extend_dir }}/head"}
+
+- name: mv plugins to
+  shell: mv {{item.src}}/* {{item.dest}}
+  with_items:
+    - {src: "{{ es_plugins_dir }}/ik/elasticsearch", dest: "{{ es_plugins_dir }}/ik"}
+    - {src: "{{ es_extend_dir }}/head/elasticsearch-head", dest: "{{ es_extend_dir }}/head"}
+    - {src: "{{ es_extend_dir }}/node/node-v12.10.0-linux-x64", dest: "{{ es_extend_dir }}/node"}
+    - {src: "{{ es_extend_dir }}/cerebro/cerebro-0.8.4", dest: "{{ es_extend_dir }}/cerebro"}
+
+- name: install cerbro
+  template:
+    src: 5.6.2/cerebro.conf.j2
+    dest: "{{ es_extend_dir }}/cerebro/conf/application.conf"
+
+- name: config cerbro service
+  template:
+    src: 5.6.2/cerebro.service.j2
+    dest: "/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}-cerebro.service"
+
+- name: start cerebro
+  systemd:
+    name: "elasticsearch-{{ES_PORT1}}-cerebro"
+    state: started
+    enabled: true
+    daemon-reload: true
+
+- name: config head
+  shell: 'sed -i "s/9210/{{ES_PORT4}}/" {{ es_extend_dir }}/head/Gruntfile.js'
+
+
+- name: config head service
+  template:
+    src: 5.6.2/head-start.sh.j2
+    dest: "{{es_extend_dir}}/head/startup.sh"
+
+- name: config head service
+  template:
+    src: 5.6.2/head.service.j2
+    dest: "/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}-head.service"
+
+
+- name: set es path owner
+  file:
+    path: "{{ es_dir }}"
+    owner: elasticsearch
+    group: elasticsearch
+    recurse: yes
+    mode: "0755"
+

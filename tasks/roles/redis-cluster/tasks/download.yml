@@ -1,0 +1,18 @@
+---
+- name: create {{ temp_dir }}
+  file:
+    path: "{{ temp_dir }}"
+    state: directory
+
+- name: upload redis
+  copy:
+    src: "{{PACKAGES_DIR}}/packages/middleware/redis/{{ redis_tarball }}"
+    dest: "{{ temp_dir }}/redis-{{ redis_version }}.tar.gz"
+    mode: '0755'
+
+- name: extract redis tarball
+  unarchive:
+    src: "{{ temp_dir }}/redis-{{ redis_version }}.tar.gz"
+    dest: "{{ temp_dir }}"
+    creates: "{{ temp_dir }}/redis-{{ redis_version }}"
+    copy: no

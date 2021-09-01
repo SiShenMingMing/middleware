@@ -1,0 +1,11 @@
+---
+# 启动服务
+- name: start rabbitmq
+  service: name="rabbitmq-server-{{ rabbitmq_port }}" state=restarted
+
+- name: check rabbitmq status
+  wait_for:  
+    port: "{{ rabbitmq_port }}"
+    delay: 10
+    state: started
+    timeout: 30

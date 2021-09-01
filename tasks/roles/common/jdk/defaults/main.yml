@@ -1,0 +1,7 @@
+nexus_url: http://172.20.47.184:10005
+files_url: "{{nexus_url}}/nexus/content/repositories/middleware/ansible-middleware/roles/common/jdk/files"
+
+jdk_file: jdk-8u201-linux-x64.tar.gz
+jdk_src_path: /usr/local/src
+java_dir: /usr/local
+java_home: "{{java_dir}}/jdk1.8.0_201"

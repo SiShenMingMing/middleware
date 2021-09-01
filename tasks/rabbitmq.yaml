@@ -1,0 +1,6 @@
+---
+
+## rabbitmq管理  inventory/rabbitmq.ini
+- hosts: rabbitmq-hosts
+  roles:
+  - { role: rabbitmq }

@@ -1,3 +1,0 @@
-- include_tasks: postgresql-install.yaml
-  tags: postgresql-install
-  when: action == "postgresql-install"

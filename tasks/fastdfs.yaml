@@ -1,0 +1,4 @@
+- name: Deploy fastdfs
+  hosts: all
+  roles:
+    - fastdfs

@@ -1,0 +1,40 @@
+- name: Get package from url
+  get_url: url={{ files_url }}/{{ line_item }} dest={{ role_path }}/files/{{ line_item }}
+  with_items:
+    - zookeeper-3.4.9.tar.gz
+  ignore_errors: true
+  when: nexus_url != ""
+  connection: local
+  run_once: true
+  loop_control:
+    loop_var: line_item
+
+- name: Change ownership on monasca download directory.
+  file: path="{{monasca_download_dir}}" state=directory owner=root group=root recurse=yes
+
+- name: Change ownership on zokeeper directory.
+  file: path="{{zookeeper_dir}}" state=directory owner=root group=root recurse=yes
+
+- name: upload file
+  copy:
+    src: "zookeeper-{{zookeeper_version}}.tar.gz"
+    dest: "{{monasca_download_dir}}/zookeeper-{{zookeeper_version}}.tar.gz"
+#    checksum: "{{ redis_checksum|default(omit) }}"
+  ignore_errors: yes
+  changed_when: false
+  register: zk_exist
+
+- name: Download Zookeeper version
+  get_url: url={{zookeeper_url}} dest={{monasca_download_dir}}/zookeeper-{{zookeeper_version}}.tar.gz timeout=100
+  when: zk_exist is failed
+
+- name: Unpack tarball
+  command: tar xzf {{monasca_download_dir}}/zookeeper-{{zookeeper_version}}.tar.gz --strip-components=1 chdir={{zookeeper_dir}} creates={{zookeeper_dir}}/bin warn=false
+
+- name: Setup Apache ZooKeeper service
+  template: dest="/etc/systemd/system/zookeeper.service" src=zookeeper.service.j2
+  register: zookeeper_service
+
+- name: reload systemd
+  command: /usr/bin/systemctl --system daemon-reload
+  when: zookeeper_service is changed

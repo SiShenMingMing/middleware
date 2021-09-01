@@ -1,0 +1,23 @@
+[Unit]
+Description=Advanced key-value store
+After=network.target
+Documentation=http://redis.io/documentation, man:redis-server(1)
+
+[Service]
+Type={{ 'forking' if redis_daemonize == 'yes' else 'simple' }}
+ExecStartPre=/usr/bin/echo never > /sys/kernel/mm/transparent_hugepage/enabled
+ExecStart={{ redis_install_dir }}/bin/redis-server {{ redis_install_dir }}/conf/redis_{{ redis_port }}.conf --supervised systemd
+PIDFile={{ redis_pidfile }}
+TimeoutStopSec=0
+Restart=always
+User={{ redis_user }}
+Group={{ redis_group }}
+
+{% if redis_oom_score_adjust != 0 %}
+OOMScoreAdjust={{ redis_oom_score_adjust }}
+{% endif %}
+
+LimitNOFILE={{ redis_nofile_limit }}
+
+[Install]
+WantedBy=multi-user.target

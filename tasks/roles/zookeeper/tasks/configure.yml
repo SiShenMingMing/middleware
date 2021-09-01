@@ -1,0 +1,39 @@
+---
+
+- name: Change ownership on zokeeper data directory.
+  file:
+    path: "{{zookeeper_data_dir}}"
+    state: directory
+    owner: root
+    group: root
+    recurse: yes
+
+- name: Setup zoo.cfg
+  template: dest="{{zookeeper_conf_dir}}/zoo.cfg" src=zoo.cfg.j2
+  notify:
+    - restart zookeeper
+
+- name: Setup myid
+  template: dest="{{zookeeper_data_dir}}/myid" src=myid.j2
+  notify:
+    - restart zookeeper
+
+- name: Update zkEnv
+  template: dest="{{zookeeper_dir}}/bin/zkEnv.sh" src=zkEnv.sh.j2
+  notify:
+    - restart zookeeper
+
+- name: Setup environment
+  template: dest="{{zookeeper_conf_dir}}/environment" src=environment.j2
+  notify:
+    - restart zookeeper
+
+- name: Create log_dir
+  file: path={{zookeeper_log_dir}} state=directory owner=root group=root mode=755
+
+- name: Setup log4j
+  template: dest="{{zookeeper_conf_dir}}/log4j.properties" owner=root group=root mode=644 src=log4j.properties.j2
+  notify:
+    - restart zookeeper
+
+- meta: flush_handlers

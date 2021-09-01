@@ -1,0 +1,106 @@
+---
+## Installation options
+# redis_version: v5.0.3 , v6.0.8, v5.0.8
+temp_dir: /tmp/src/redis
+middleware_dir: /data/iuap/middleware
+redis_install_dir: "{{ middleware_dir }}/redis-{{ redis_port }}"
+redis_dir: "{{ redis_install_dir }}/data"
+# Set this value to a local path of a tarball to use for installation instead of downloading
+redis_tarball: redis-{{ redis_version }}.tar.gz
+
+redis_user: redis
+redis_group: "{{ redis_user }}"
+
+# The open file limit for Redis/Sentinel
+redis_nofile_limit: 16384
+redis_oom_score_adjust: 0
+
+## Role options
+# Configure Redis as a service
+# This creates the init scripts for Redis and ensures the process is running
+# Also applies for Redis Sentinel
+redis_as_service: true
+# Add local facts to /etc/ansible/facts.d for Redis
+redis_local_facts: true
+# Service name
+redis_service_name: "redis-{{ redis_port }}"
+
+## Networking/connection options
+redis_bind: 0.0.0.0
+# redis_port: 6379
+redis_password: false
+
+## Replication options
+# Set slaveof just as you would in redis.conf. (e.g. "redis01 6379")
+redis_slaveof: false
+
+## Logging
+redis_logfile: "{{ redis_install_dir }}/log/redis.log"
+
+## General configuration
+redis_daemonize: "yes"
+redis_pidfile: "{{ redis_install_dir }}/run/redis_{{ redis_port }}.pid"
+# Number of databases to allow
+redis_databases: 64
+redis_loglevel: notice
+# Redis memory limit (e.g. 4294967296, 4096mb, 4gb)
+redis_maxmemory: "{{ (ansible_memtotal_mb / 4 * 1)|int}}MB"
+
+# How frequently to snapshot the database to disk
+# e.g. "900 1" => 900 seconds if at least 1 key changed
+redis_save:
+  - 900 1
+  - 300 10
+  - 60 10000
+redis_appendonly: "yes"
+
+redis_client_output_buffer_limit_normal: 0 0 0
+redis_client_output_buffer_limit_slave: 256mb 64mb 60
+redis_client_output_buffer_limit_pubsub: 32mb 8mb 60
+
+# Enable syslog. "yes" or "no"
+redis_syslog_enabled: "yes"
+redis_syslog_ident: "{{ redis_service_name }}"
+# Syslog facility. Must be USER or LOCAL0-LOCAL7
+redis_syslog_facility: USER
+
+## Redis sentinel configs
+# Set this to true on a host to configure it as a Sentinel
+redis_sentinel: false
+redis_sentinel_dir: "{{ middleware_dir }}/redis-sentinel-{{ redis_sentinel_port }}"
+redis_sentinel_bind: 0.0.0.0
+# redis_sentinel_port: 26379
+redis_sentinel_password: false
+redis_sentinel_pidfile: "{{ redis_sentinel_dir }}/run/redis_sentinel_{{ redis_sentinel_port }}.pid"
+redis_sentinel_logfile: "{{ redis_sentinel_dir }}/log/redis_sentinel.log"
+redis_sentinel_syslog_ident: sentinel_{{ redis_sentinel_port }}
+redis_sentinel_oom_score_adjust: 0
+redis_sentinel_monitors:
+  - name: mymaster
+    host: localhost
+    port: 6379
+    quorum: 2
+    auth_pass: Ufsoft123
+    down_after_milliseconds: 30000
+    parallel_syncs: 1
+    failover_timeout: 180000
+    notification_script: false
+    client_reconfig_script: false
+
+## Redis cluster configs
+redis_cluster: false
+redis_cluster_replicas: 1
+redis_cluster_bind: 0.0.0.0
+redis_cluster_port: 26379
+redis_cluster_daemonize: "yes"
+redis_cluster_loglevel: notice
+redis_cluster_appendonly: "yes"
+redis_cluster_enabled: "yes"
+redis_cluster_config_file: nodes.conf
+redis_cluster_node_timeout: 5000
+redis_cluster_maxmemory: "{{ (ansible_memtotal_mb / 2)|int}}MB"
+redis_cluster_password: false
+
+## Redis Thread configs
+io_threads: 4
+io_threads_do_reads: "yes"

@@ -1,0 +1,9 @@
+---
+- name: Start kafka
+  command: pwd
+  changed_when: true
+  notify:
+    - restart kafka
+
+- meta: flush_handlers
+

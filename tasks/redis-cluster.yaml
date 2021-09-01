@@ -1,0 +1,37 @@
+- name: configure the master redis server
+  hosts: redis-master
+  vars:
+    - used_redis_config: true
+  roles:
+    - redis-cluster
+
+- name: configure redis slaves
+  hosts: redis-slave
+  vars:
+    - used_redis_config: true
+    - redis_slaveof: "{{ groups['redis-master'][0] }} {{ hostvars[groups['redis-master'][0]]['redis_port'] }}"
+  roles:
+    - redis-cluster
+
+- name: configure redis sentinel nodes
+  hosts: redis-sentinel
+  vars:
+    - redis_sentinel_monitors:
+      - name: "{{ hostvars[groups['redis-sentinel'][0]]['cluster_name'] }}"
+        host: "{{ groups['redis-master'][0] }}"
+        port: "{{ hostvars[groups['redis-master'][0]]['redis_port'] }}"
+  roles:
+    - redis-cluster
+
+- name: configure the cluster redis server
+  hosts: redis-cluster
+  gather_facts: True
+  roles:
+    - role: redis-cluster
+
+- name: uninstall the cluster server
+  hosts: redis-cluster-uninstall
+  tasks:
+    - import_role:
+        name: redis-cluster
+        tasks_from: uninstall.yml

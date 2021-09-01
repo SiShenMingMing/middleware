@@ -1,0 +1,55 @@
+---
+- name: create redis working directory
+  file:
+    path: "{{ redis_install_dir }}/data"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+
+- name: create redis systemd service
+  template:
+    src: templates/default/redis.service.j2
+    dest: /usr/lib/systemd/system/{{ redis_service_name }}.service
+    mode: '0644'
+  register: redis_unit_file
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - redis_unit_file is changed
+
+- name: set redis to start at boot
+  service:
+    name: "{{ redis_service_name }}"
+    enabled: yes
+
+- name: create redis config file
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_install_dir }}/conf/redis_{{ redis_port }}.conf"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  notify: "restart redis"
+
+- name: create redis config file
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_install_dir }}/conf/redis_{{ redis_port }}.conf"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  when: redis_slaveof != false
+  notify: "restart redis"
+
+# Flush handlers before ensuring the service is started to prevent
+# a start and then restart
+- name: flush handlers to apply config changes
+  meta: flush_handlers
+
+- name: ensure redis is running
+  service:
+    name: "{{ redis_service_name }}"
+    state: started
+  when: redis_as_service

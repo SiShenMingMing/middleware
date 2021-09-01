@@ -1,0 +1,15 @@
+---
+- name: Stop kafka
+  service: name=kafka state=stopped enabled=no
+  ignore_errors: true
+
+- name: Uninstall kafka
+  file: state=absent path={{ item }}
+  with_items:
+    - "/usr/local/kafka_{{ kafka_scala_version }}-{{ kafka_version }}"
+    - /usr/local/kafka
+    - /etc/init/kafka.conf
+    - /etc/systemd/system/kafka.service
+    - "{{ kafka_data_dir }}"
+    - "{{ kafka_log_dir }}"
+  ignore_errors: true

@@ -1,0 +1,6 @@
+---
+
+## elasticsearch 管理  inventory/elasticsearch.ini
+- hosts: hosts
+  roles:
+  - { role: elasticsearch }

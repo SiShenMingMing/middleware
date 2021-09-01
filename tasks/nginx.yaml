@@ -1,0 +1,4 @@
+## nginx 管理  inventory/nginx.ini
+- hosts: nginx
+  roles:
+  - { role: nginx }

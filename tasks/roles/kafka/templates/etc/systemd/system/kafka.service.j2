@@ -1,0 +1,18 @@
+[Unit]
+Description=Kafka Daemon
+After=zookeeper-{{ kafka_zookeeper_port }}.service
+
+[Service]
+Type=simple
+User={{ kafka_user }}
+Group={{ kafka_group }}
+LimitNOFILE={{ kafka_nofiles_limit }}
+EnvironmentFile=/etc/default/kafka
+ExecStart=/usr/local/kafka/bin/kafka-server-start.sh {{kafka_conf_dir}}/server.properties
+ExecStop=/usr/local/kafka/bin/kafka-server-stop.sh {{kafka_conf_dir}}/server.properties
+Restart=on-failure
+RestartSec=10s
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target

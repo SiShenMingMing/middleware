@@ -1,0 +1,16 @@
+[Unit]
+Description=RabbitMQ broker
+After=syslog.target network.target
+
+[Service]
+Environment=HOME=/usr/lib64/erlang/bin
+User={{ rabbitmq_user }}
+Group={{ rabbitmq_group }}
+ExecStartPost=-/usr/bin/sed -i '/^-A POSTROUTING -j MASQUERADE/d' /etc/sysconfig/iptables
+ExecStartPost=-/sbin/iptables -D POSTROUTING -j MASQUERADE
+ExecStart={{ rabbitmq_dir }}/sbin/rabbitmq-server
+ExecStop={{ rabbitmq_dir }}/sbin/rabbitmqctl -n rabbit{{ hostvars[inventory_hostname].server_num }}@mqnode{{ hostvars[inventory_hostname].server_num }} shutdown
+LimitNOFILE=32768
+
+[Install]
+WantedBy=multi-user.target

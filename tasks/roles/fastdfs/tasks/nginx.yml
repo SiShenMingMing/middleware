@@ -1,0 +1,175 @@
+---
+- name: Create path /usr/local/src
+  file: path=/usr/local/src state=directory
+  tags: fdfs-nginx
+
+- name: Unarchive fastdfs nginx module
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/fastdfs-nginx-module-1.20.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/ngx_cache_purge-2.3.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/{{ nginx_package }}.tar.gz", dest: "/tmp"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/lua/lua-nginx-module-0.10.15.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/lua/luajit2-2.1-20190912.tar.gz", dest: "/tmp"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/lua/lualib.tar.gz", dest: "/tmp"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/lua/ngx_devel_kit-0.3.1.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/modules/nginx-module-vts-0.1.18.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/modules/echo-nginx-module-0.62rc1.tar.gz", dest: "/usr/local/src"}
+    - {src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/modules/set-misc-nginx-module-0.32.tar.gz", dest: "/usr/local/src"}
+  tags: fdfs-nginx
+
+- name: Install lualib
+  shell: >-
+    cd /tmp/luajit2-2.1-20190912 &&
+    rm /usr/local/luajit2-2.1 -rf &&
+    make PREFIX=/usr/local/luajit2-2.1 &&
+    make install PREFIX=/usr/local/luajit2-2.1
+  tags: fdfs-nginx
+
+- name: Add lualib
+  shell: >-
+    rm /usr/local/luajit2-2.1/share/lua/5.1 -rf &&
+    \mv /tmp/lualib /usr/local/luajit2-2.1/share/lua/5.1
+  tags: fdfs-nginx
+
+
+- name: Sed fastdfs nginx module config
+  replace:
+    path: /usr/local/src/fastdfs-nginx-module-1.20/src/config
+    regexp: '{{ item.regexp }}'
+    replace: '{{ item.replace }}'
+  with_items:
+    - { regexp: 'ngx_module_incs=[^#\n]*', replace: 'ngx_module_incs="/usr/include/fastdfs /usr/include/fastcommon/"' }
+    - { regexp: 'CORE_INCS=[^#\n]*', replace: 'CORE_INCS="$CORE_INCS /usr/include/fastdfs /usr/include/fastcommon/"' }
+  tags: fdfs-nginx
+#  lineinfile:
+#    dest: /usr/local/src/fastdfs-nginx-module-1.20/src/config
+#    regexp="^export PATH=.*$"
+#    line='export PATH="${PATH}:/usr/local/kafka/bin"'
+#    state=present
+#    create=yes
+
+- name: Install zlib
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - zlib-devel
+    - expat
+    - gd
+    - gd-devel
+    - openssl
+    - openssl-devel
+  tags: fdfs-nginx
+
+- name: check if nginx user exists (ignore errors)
+  command: id {{ nginx_user }}
+  ignore_errors: yes
+  changed_when: false
+  register: user_exists
+
+- name: add nginx group
+  group:
+    name: "{{ nginx_group }}"
+    state: present
+  when: user_exists is failed
+
+- name: add nginx user
+  user:
+    name: "{{ nginx_user }}"
+    group: "{{ nginx_group }}"
+    comment: "Nginx"
+    create_home: no
+    shell: /bin/false
+    system: yes
+  when: user_exists is failed
+
+- name: Config nginx
+  shell: >-
+    export LUAJIT_LIB=/usr/local/luajit2-2.1/lib &&
+    export LUAJIT_INC=/usr/local/luajit2-2.1/include/luajit-2.1 &&
+    cd /tmp/{{ nginx_package }} &&
+    ./configure --prefix=/usr/share/nginx \
+        --sbin-path=/usr/sbin/nginx \
+        --modules-path=/usr/lib64/nginx/modules \
+        --pid-path=/run/nginx.pid \
+        --conf-path={{ middleware_path }}/nginx/nginx.conf \
+        --error-log-path={{ middleware_logs }}/nginx/error.log \
+        --http-log-path={{ middleware_logs }}/nginx/access.log \
+        --user={{ nginx_user }} \
+        --group={{ nginx_group }} \
+        --with-http_realip_module \
+        --with-http_auth_request_module \
+        --with-stream \
+        --with-http_ssl_module \
+        --with-http_sub_module \
+        --with-ld-opt='-ljemalloc' \
+        --with-ld-opt="-Wl,-rpath,/usr/local/luajit2-2.1/lib" \
+        --add-module=/usr/local/src/ngx_devel_kit-0.3.1 \
+        --add-module=/usr/local/src/lua-nginx-module-0.10.15 \
+        --add-module=/usr/local/src/nginx-module-vts-0.1.18 \
+        --add-module=/usr/local/src/echo-nginx-module-0.62rc1 \
+        --add-module=/usr/local/src/set-misc-nginx-module-0.32 \
+        --add-module=/usr/local/src/fastdfs-nginx-module-1.20/src \
+        --add-module=/usr/local/src/ngx_cache_purge-2.3 \
+        --with-http_image_filter_module &&
+      make &&
+      make install
+  tags: fdfs-nginx
+
+- name: change ownership on nginx directory.
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nginx_user }}"
+    group: root
+    recurse: yes
+  with_items:
+    - "{{ middleware_logs }}/nginx"
+
+- name: Clean nginx package
+  file: state=absent path={{ nginx_package }}
+  tags: fdfs-nginx
+
+- name: Create nginx dependence dirctory
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ middleware_path }}/nginx/sites-enabled"
+    - "{{ middleware_path }}/nginx/conf.d"
+    - "{{ middleware_path }}/nginx/proxy_temp"
+    - "{{ middleware_path }}/nginx/proxy_cache"
+    - "{{ middleware_path }}/nginx/proxy_cache_image"
+    - "{{ middleware_path }}/nginx/lualib"
+  tags: fdfs-nginx
+
+- name: Upload nginx config file
+  template: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - {src: "nginx.conf.j2", dest: "{{ middleware_path }}/nginx/nginx.conf"}
+    - {src: "nginx_fastdfs.conf.j2", dest: "{{ middleware_path }}/nginx/conf.d/fastdfs.conf"}
+    - {src: "mod_fastdfs.conf.j2", dest: "/etc/fdfs/mod_fastdfs.conf"}
+    - {src: "uuid4.lua.j2", dest: "{{ middleware_path }}/nginx/lualib/uuid4.lua"}
+  tags: fdfs-nginx
+
+- name: Set nginx config link
+  file: src="{{ middleware_path }}/nginx/conf.d/fastdfs.conf" dest="{{ middleware_path }}/nginx/sites-enabled/fastdfs.conf" state=link
+  tags: fdfs-nginx
+
+- name: Create nginx systemd
+  template: src=system/nginx.service.j2 dest=/usr/lib/systemd/system/nginx.service
+  tags: fdfs-nginx
+
+- name: Daemon reload
+  systemd: state=restarted name=nginx enabled=yes daemon_reload=yes
+  tags: fdfs-nginx
+
+- name: Waiting nginx start
+  wait_for:
+    timeout: 180
+    delay: 10
+    port: "{{ http_server_port }}"
+    host: "{{ inventory_hostname }}"
+    sleep: 5
+  tags: fdfs-nginx

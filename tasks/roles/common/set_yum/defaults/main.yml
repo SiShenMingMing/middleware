@@ -1,0 +1,4 @@
+nexus_url: http://172.20.47.184:10005
+nexus_ip: 10.10.1.1
+nexus_port: 10005
+

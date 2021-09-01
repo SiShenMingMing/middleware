@@ -1,0 +1,23 @@
+---
+- name: Create tracker data path
+  file: path={{ base_path_tracker }} state=directory owner={{ fastdfs_user }} group={{ fastdfs_group }}
+
+- name: Copy config file
+  template: src=tracker.conf.j2 dest=/etc/fdfs/tracker.conf
+
+- name: Add systemd file
+  template: src=system/fdfs-trackerd.service.j2 dest=/usr/lib/systemd/system/fdfs-trackerd.service
+
+- name: Systemd daemon reload
+  systemd: daemon_reload=yes
+
+- name: Start tracker
+  systemd: state=restarted name=fdfs-trackerd enabled=yes
+
+- name: Waiting tracker start
+  wait_for:
+    timeout: 180
+    delay: 10
+    port: "{{ tracker_port }}"
+    host: "{{ inventory_hostname }}"
+    sleep: 5

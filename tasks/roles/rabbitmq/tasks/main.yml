@@ -1,0 +1,28 @@
+---
+- include: install.yml
+  tags:
+    - rabbitmq-install
+
+- include: uninstall.yml
+  tags:
+    - rabbitmq-uninstall
+
+- include: restart.yml
+  tags:
+    - rabbitmq-restart
+
+- include: stop.yml
+  tags: 
+    - rabbitmq-stop
+
+- include: check_status.yml
+  tags: 
+    - rabbitmq-check_status
+
+- include: chg_passwd.yml
+  tags:
+    - rabbitmq-chg_passwd
+
+
+
+

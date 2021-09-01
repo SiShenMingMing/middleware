@@ -1,0 +1,39 @@
+---
+#- name: Create yum directory
+#  file: path=/etc/yum.repos.yonyou state=directory
+
+#- name: Get config file
+#  get_url: url={{ nexus_url }}/nexus/content/repositories/middleware/init_sh/yonyou.repo dest=/etc/yum.repos.yonyou/yonyou.repo
+#  when: nexus_url != ""
+#  ignore_errors: true
+
+#- name: Get config file
+#  get_url: url=http://{{ nexus_ip }}:{{ nexus_port }}/nexus/content/repositories/middleware/init_sh/yonyou.repo dest=/etc/yum.repos.yonyou/yonyou.repo
+#  when: nexus_url == ""
+
+- name: Update yum.conf
+  lineinfile:
+    path: /etc/yum.conf
+    regexp: '^reposdir='
+    line: reposdir=/etc/yum.repos.yonyou
+
+- name: Upload yonyou.repo
+  copy: src=/etc/yum.repos.yonyou/yonyou.repo dest=/etc/yum.repos.yonyou/
+
+- name: Find yum history files
+  find:
+    paths: /var/lib/yum/history
+    pattern: "*.sqlite"
+  register: yum_files
+
+- name: Clean yum history files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ yum_files.files }}"
+
+- name: Rebuild db
+  command: rpm --rebuilddb
+
+- name: Create cache
+  shell: "yum clean all && yum makecache fast"

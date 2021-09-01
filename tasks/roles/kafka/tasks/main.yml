@@ -1,0 +1,45 @@
+---
+- include: check-env.yml
+  tags:
+    - kafka-install
+    - kafka-cfg
+    - check-env
+  when: run_mode == "Deploy"
+
+- include: java.yml
+  when: kafka_java_enabled and run_mode == "Deploy"
+  tags:
+    - kafka-install
+    - java
+
+- include: system.yml
+  tags:
+    - kafka-install
+    - kafka-cfg
+  when: run_mode == "Deploy"
+
+- include: limits.yml
+  tags:
+    - kafka-cfg
+    - limits
+  when: run_mode == "Deploy"
+
+- include: kafka-install.yml
+  tags:
+    - kafka-install
+  when: run_mode == "Deploy"
+
+- include: kafka-cfg.yml
+  tags:
+    - kafka-cfg
+  when: run_mode == "Deploy"
+
+- include: start.yml
+  tags:
+    - start-kafka
+  when: run_mode == "Start"
+
+- include: stop.yml
+  tags:
+    - stop-kafka
+  when: run_mode == "Stop"

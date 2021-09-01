@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  author: Vilson
+  description: An Ansible role for installing and configuring a kafka cluster.
+  company: YonYou
+  min_ansible_version: 2.2.3.0
+  platforms:
+  - name: Debian
+    versions:
+    - 7
+  - name: Ubuntu
+    versions:
+    - trusty
+    - xenial
+  categories:
+  - cloud
+  - kafka
+  - pubsub
+  - queue
+  - messaging
+  - clustering
+  - development
+dependencies: []

@@ -1,0 +1,39 @@
+---
+- name: check redis systemd service
+  shell: "ls /usr/lib/systemd/system/redis-{{ item }}.service > /dev/null 2>&1; echo $?"
+  with_items:
+    - "{{ redis_port }}"
+  register: check_redis_service
+  when:
+    - redis_port is defined
+  ignore_errors: True
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - check_redis_service is defined
+
+- name: stop redis systemd service
+  service:
+    name: "redis-{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ redis_port }}"
+  when:
+    - check_redis_service.results[0].stdout == "0"
+
+- name: delete redis systemd service
+  file:
+    path: "/usr/lib/systemd/system/redis-{{ item }}.service"
+    state: absent
+  with_items: "{{ redis_port }}"
+  when:
+    - check_redis_service.results[0].stdout == "0"
+
+- name: delete redis directory
+  file:
+    path: "{{ middleware_dir }}/redis-{{ item }}"
+    state: absent
+  with_items: "{{ redis_port }}"
+  when:
+    - check_redis_service.results[0].stdout == "0"

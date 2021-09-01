@@ -1,0 +1,23 @@
+- block:
+    - name: Stop zookeeper service
+      systemd: name=zookeeper-{{zookeeper_client_port}} state=stopped
+
+    - name: System daemon reload
+      shell: |
+        systemctl disable zookeeper-{{zookeeper_client_port}}
+        systemctl daemon-reload
+
+    - name: Clean zookeeper file
+      file: path={{ item }} state=absent
+      with_items:
+        - "{{ middleware_backup }}/zookeeper-{{ zookeeper_client_port }}.{{ ansible_date_time.date }}.bak"
+        - "/etc/systemd/system/zookeeper-{{ zookeeper_client_port }}.service"
+
+    - name: Create backup path
+      file: path={{ middleware_backup }}/zookeeper-{{ zookeeper_client_port }}.{{ ansible_date_time.date }}.bak state=directory
+
+    - name: Backup zookeeper package
+      shell: |
+        \mv {{ middleware_path }}/zookeeper-{{ zookeeper_client_port }} {{ middleware_backup }}/zookeeper-{{ zookeeper_client_port }}.{{ ansible_date_time.date }}.bak
+
+  ignore_errors: true

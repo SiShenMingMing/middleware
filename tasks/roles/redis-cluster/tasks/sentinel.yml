@@ -1,0 +1,44 @@
+---
+- name: create sentinel working directory
+  file:
+    path: "{{ redis_sentinel_dir }}/data"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+
+- name: create sentinel systemd service
+  template:
+    src: templates/default/redis_sentinel.service.j2
+    dest: /usr/lib/systemd/system/redis-sentinel-{{ redis_sentinel_port }}.service
+    mode: '0644'
+  register: sentinel_unit_file
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - sentinel_unit_file is changed
+
+- name: set sentinel to start at boot
+  service:
+    name: redis-sentinel-{{ redis_sentinel_port }}
+    enabled: yes
+
+- name: create sentinel config file
+  template:
+    src: redis_sentinel.conf.j2
+    dest: "{{ redis_sentinel_dir }}/conf/redis_sentinel_{{ redis_sentinel_port }}.conf"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  notify: "restart sentinel"
+
+# Flush handlers before ensuring the service is started to prevent
+# a start and then restart
+- name: flush handlers to apply config changes
+  meta: flush_handlers
+
+- name: ensure sentinel is running
+  service:
+    name: redis-sentinel-{{ redis_sentinel_port }}
+    state: started

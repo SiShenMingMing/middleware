@@ -1,0 +1,66 @@
+---
+- name: check cluster systemd service
+  shell: "ls /usr/lib/systemd/system/redis-cluster-{{ item }}.service > /dev/null 2>&1; echo $?"
+  with_items:
+    - "{{ redis_master_port }}"
+    - "{{ redis_slave_port }}"
+  register: check_cluster_service
+  when:
+    - redis_master_port is defined
+    - redis_slave_port is defined
+  ignore_errors: True
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when:
+    - check_cluster_service is defined
+
+- name: stop cluster master
+  service:
+    name: "redis-cluster-{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ redis_master_port }}"
+  when:
+    - check_cluster_service.results[0].stdout == "0"
+
+- name: stop cluster slave
+  service:
+    name: "redis-cluster-{{ item }}"
+    state: stopped
+    enabled: no
+  with_items: "{{ redis_slave_port }}"
+  when:
+    - check_cluster_service.results[1].stdout == "0"
+
+- name: delete cluster master systemd service
+  file:
+    path: "/usr/lib/systemd/system/redis-cluster-{{ item }}.service"
+    state: absent
+  with_items: "{{ redis_master_port }}"
+  when:
+    - check_cluster_service.results[0].stdout == "0"
+
+- name: delete cluster slave systemd service
+  file:
+    path: "/usr/lib/systemd/system/redis-cluster-{{ item }}.service"
+    state: absent
+  with_items: "{{ redis_slave_port }}"
+  when:
+    - check_cluster_service.results[1].stdout == "0"
+
+- name: delete cluster master directory
+  file:
+    path: "{{ middleware_dir }}/redis-cluster-{{ item }}"
+    state: absent
+  with_items: "{{ redis_master_port }}"
+  when:
+    - check_cluster_service.results[0].stdout == "0"
+
+- name: delete cluster slave directory
+  file:
+    path: "{{ middleware_dir }}/redis-cluster-{{ item }}"
+    state: absent
+  with_items: "{{ redis_slave_port }}"
+  when:
+    - check_cluster_service.results[1].stdout == "0"

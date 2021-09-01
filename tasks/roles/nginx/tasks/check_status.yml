@@ -1,0 +1,20 @@
+---
+- name: Check if nginx is running
+  command: systemctl status nginx
+  changed_when: false
+  register: service_status_nginx
+
+- name: Report status of tracker
+  fail:
+    msg: |
+      Servicenginx is not running.
+      Output of `systemctl status nginx`
+      {{ service_status_nginx.stdout }}
+      {{ service_status_nginx.stderr }}
+  when: service_status_nginx is failed
+
+- name: Check nginx port {{ nginx_port }} active
+  wait_for:
+    timeout: 3
+    port: "{{ nginx_port }}"
+    host: "{{ inventory_hostname }}"

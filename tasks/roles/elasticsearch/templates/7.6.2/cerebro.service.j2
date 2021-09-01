@@ -1,0 +1,16 @@
+[Unit]
+Description=Elasticsearch Cerebro
+After=network.target
+
+[Service]
+Environment=JAVA_HOME=/usr/bin/java
+PIDFile={{es_dir}}/extend/cerebro/cerebro.pid
+User=elasticsearch
+Group=elasticsearch
+LimitNOFILE=65535
+ExecStart={{es_dir}}/extend/cerebro/bin/cerebro
+Restart=on-failure
+WorkingDirectory={{es_dir}}/extend/cerebro
+
+[Install]
+WantedBy=multi-user.target

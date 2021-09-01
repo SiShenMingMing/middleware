@@ -1,0 +1,13 @@
+#!/bin/bash
+# Node service start
+export NODE_HOME={{es_dir}}/extend/node
+export PATH=\${NODE_HOME}/bin:\${PATH}
+
+# 基础目录
+bashpath=\$(cd "\$(dirname "\$0")"; pwd)
+
+# 切换目录
+cd \${bashpath}
+
+# 启动服务
+nohup npm start >stdout.log 2>stderr.log &

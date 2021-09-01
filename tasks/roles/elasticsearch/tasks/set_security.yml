@@ -1,0 +1,53 @@
+---
+- name: set es base dir
+  set_fact:
+    es_dir: "{{ middlewareDir }}/elasticsearch-{{ ES_VERSION }}-{{ ES_PORT1 }}"
+
+- name: stop service
+  include: stop.yml
+
+- name: add authorization
+  shell: |
+    echo "xpack.security.enabled: true" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+    echo "xpack.security.transport.ssl.enabled: true" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+    echo "xpack.security.transport.ssl.verification_mode: certificate" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+    echo "xpack.security.transport.ssl.keystore.path: certs/elastic-certificates.p12" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+    echo "xpack.security.transport.ssl.truststore.path: certs/elastic-certificates.p12" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+    echo "http.cors.allow-headers: Authorization, Content-Type" >> "{{middlewareDir}}/elasticsearch-{{ES_VERSION}}-{{ES_PORT1}}/config/elasticsearch.yml"
+
+- name: copy certs
+  copy:
+    src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearchcerts/certs/"
+    dest: "{{es_dir}}/config/certs/"
+    owner: elasticsearch
+    group: elasticsearch
+
+- name: start service
+  include: start.yml
+
+- name: set password
+  shell: |
+    expect <<- EOF
+    set timeout 20
+    spawn bin/elasticsearch-setup-passwords interactive
+    expect {
+        "y/N" {send "y\r";exp_continue}
+        "elastic" {send "${ES_PW}\r";exp_continue}
+        "elastic" {send "${ES_PW}\r";exp_continue}
+        "apm_system" {send "${ES_PW}\r";exp_continue}
+        "apm_system" {send "${ES_PW}\r";exp_continue}
+        "kibana" {send "${ES_PW}\r";exp_continue}
+        "kibana" {send "${ES_PW}\r";exp_continue}
+        "logstash_system" {send "${ES_PW}\r";exp_continue}
+        "logstash_system" {send "${ES_PW}\r";exp_continue}
+        "beats_system" {send "${ES_PW}\r";exp_continue}
+        "beats_system" {send "${ES_PW}\r";exp_continue}
+        "remote_monitoring_user" {send "${ES_PW}\r";exp_continue}
+        "remote_monitoring_user" {send "${ES_PW}\r";exp_continue}
+    }
+    EOF
+
+- name: check status
+  shell: |
+    curl --connect-timeout 5 -sS -u elastic:"{{ES_PW}}" http://"{{Local_IP}}":"{{ES_PORT1}}" | grep 'You Know, for Search'
+

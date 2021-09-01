@@ -1,0 +1,12 @@
+http.port={{ ES_PORT3 }}
+hosts=[
+  {
+    host="http://{{ ES_HOST }}:{{ ES_PORT1 }}"
+    name="localhost_es"
+  }
+]
+
+http = {
+    port = "{{ ES_PORT3 }}"
+    address = "0.0.0.0"
+}

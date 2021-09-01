@@ -1,0 +1,20 @@
+---
+base_dir: /data/iuap
+middleware_path: "{{ base_dir }}/middleware"
+middleware_logs: "{{ base_dir }}/logs"
+middleware_data: "{{ base_dir }}/workdir"
+middleware_backup: "{{ base_dir }}/backup"
+rabbitmq_dir: "{{ middleware_path }}/rabbitmq-{{ hostvars[inventory_hostname].rabbitmq_port }}"
+
+rabbitmq_package: "rabbitmq-server-generic-unix-3.7.28.tar.xz"
+erlang_package: "erlang-22.3-1.el7.x86_64.rpm"
+
+rabbitmq_user: rabbitmq
+rabbitmq_group: "{{ rabbitmq_user }}"
+
+rabbitmq_port: "{{ hostvars[inventory_hostname].rabbitmq_port }}"
+server_num: "{{ hostvars[inventory_hostname].server_num }}"
+node_name: "rabbit{{ server_num }}@mqnode{{ server_num }}"
+
+username: admin
+password: yJDe5vpK5q

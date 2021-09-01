@@ -1,0 +1,3 @@
+---
+- name: Stop nginx
+  systemd: state=stopped name=nginx

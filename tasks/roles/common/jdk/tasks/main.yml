@@ -1,0 +1,58 @@
+#- name: Get package from url
+#  get_url: url={{ files_url }}/{{ line_item }} dest={{ role_path }}/files/{{ line_item }}
+#  with_items:
+#    - "{{ jdk_file }}"
+#  ignore_errors: true
+#  when: nexus_url != ""
+#  connection: local
+#  run_once: true
+#  loop_control:
+#    loop_var: line_item
+
+- name: judge java exists
+  command: java -version
+  ignore_errors: yes
+  changed_when: false
+  register: java_exists
+
+- block:
+  - name: Check if src directory is exist
+    stat:
+      path: "{{ jdk_src_path }}"
+    register: jdk_src
+    changed_when: false
+
+  - name: Create src directory
+    file:
+      path: "{{ jdk_src_path }}"
+      state: directory
+      owner: root
+      group: root
+    when:
+      - not jdk_src.stat.exists
+
+  - name: Upload file
+    copy:
+      src: "{{PACKAGES_DIR}}/packages/middleware/common/{{ jdk_file }}"
+      dest: /usr/local/src/{{ jdk_file }}
+
+  - name: Unarchive file
+    unarchive:
+      src: "/usr/local/src/jdk-8u201-linux-x64.tar.gz"
+      dest: "{{java_dir}}"
+      creates: "{{java_home}}/bin/java"
+      copy: no
+
+  - name: jdk variable configuration /etc/profile file
+    shell: |
+      /bin/echo {{ item }} >> /etc/profile &&
+      source /etc/profile
+    with_items:
+       - export JAVA_HOME={{ java_home }}
+       - export PATH=\$PATH:\$JAVA_HOME/bin
+    args:
+      executable: /bin/bash
+
+  - name: symlink java to /usr/bin
+    file: src={{ java_home }}/bin/java path=/usr/bin/java state=link
+  when: java_exists is failed

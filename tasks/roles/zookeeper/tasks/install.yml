@@ -1,0 +1,96 @@
+---
+# - include_role:
+#     name: common/set_yum
+
+- name: Install jdk
+  include_role: name=common/jdk
+
+- name: Create directory
+  file: path={{ item }} state=directory
+  with_items:
+    - "{{ middleware_temp }}/zookeeper"
+    - "{{ middleware_path }}"
+    - "{{ zookeeper_log_dir }}"
+
+#- name: Get package from url
+#  get_url: url={{nexus_url}}/nexus/content/repositories/middleware/ansible-middleware/roles/middleware/zookeeper/files/{{ line_item }} dest={{ role_path }}/files/{{ line_item }}
+#  with_items:
+#    - "{{ package_name }}"
+#  ignore_errors: true
+#  when: nexus_url is defined and nexus_url != ""
+#  connection: local
+#  run_once: true
+#  loop_control:
+#    loop_var: line_item
+
+- name: Upload and unarchive zookeeper package
+  unarchive:
+    src: "{{PACKAGES_DIR}}/packages/middleware/zookeeper/{{ package_name }}"
+    dest: "{{ middleware_path }}"
+    list_files: yes
+  register: unarchive_files
+
+- name: Rename package
+  shell: |
+    rm -fr {{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}
+    \mv -f {{ middleware_path }}/{{ unarchive_files.files[0].split('/')|first }} {{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}
+
+- name: Create data directory
+  file: path={{ zookeeper_data_dir }} state=directory
+
+- name: get java_home
+  shell: |
+    grep ^'export JAVA_HOME=' /etc/profile | awk -F'=' 'NR==1 { print $NF}'
+  register: current_java_home
+
+- name: Upload zookeeper file
+  template: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - {src: "zookeeper.service.j2", dest: "/etc/systemd/system/zookeeper-{{ zookeeper_client_port }}.service"}
+    - {src: "myid.j2", dest: "{{ zookeeper_data_dir }}/myid"}
+    - {src: "zoo.cfg.j2", dest: "{{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}/conf/zoo.cfg"}
+    - {src: "environment.j2", dest: "{{zookeeper_conf_dir}}/environment"}
+    - {src: "log4j.properties.j2", dest: "{{zookeeper_conf_dir}}/log4j.properties"}
+
+- name: check if zookeeper user exists (ignore errors)
+  command: id {{ zookeeper_user }}
+  ignore_errors: yes
+  changed_when: false
+  register: user_exists
+
+- name: add zookeeper group
+  group:
+    name: "{{ zookeeper_group }}"
+    state: present
+  when: user_exists is failed
+
+- name: add zookeeper user
+  user:
+    name: "{{ zookeeper_user }}"
+    group: "{{ zookeeper_group }}"
+    comment: "ZooKeeper"
+    create_home: no
+    shell: /bin/false
+    system: yes
+  when: user_exists is failed
+
+- name: change ownership on zookeeper directory.
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ zookeeper_user }}"
+    group: "{{ zookeeper_group }}"
+    recurse: yes
+  with_items:
+    - "{{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}"
+    - "{{ zookeeper_log_dir }}"
+
+- name: Start zookeeper
+  systemd: name=zookeeper-{{ zookeeper_client_port }} state=restarted enabled=yes daemon_reload=yes
+
+- name: Waiting zookeeper start
+  wait_for:
+    timeout: "{{ monasca_wait_for_period }}"
+    port: "{{ zookeeper_client_port }}"
+    host: "{{ inventory_hostname }}"
+    sleep: 2

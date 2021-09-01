@@ -1,0 +1,17 @@
+---
+- name: Judge command exists
+  shell: command -v fdfs_upload_file
+
+- name: Create client data path
+  file: path={{ base_path_client }} state=directory
+
+- name: Generate client config
+  template: src=client.conf.j2 dest=/etc/fdfs/client.conf
+
+- name: Upload file
+  shell: "cd /etc/fdfs && fdfs_upload_file /etc/fdfs/client.conf /etc/fdfs/anti-steal.jpg"
+  register: output
+
+- name: Show output
+  debug:
+    msg: "http://{{ groups['storage']|first }}:{{ http_server_port }}/{{ output.stdout }}"

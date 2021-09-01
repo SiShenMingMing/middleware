@@ -1,0 +1,7 @@
+---
+# 密码设置
+- name: change passwd
+  shell: "{{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} change_password {{ username }} {{ password }}"
+
+- name: change auth
+  shell: "{{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} authenticate_user {{ username }} {{ password }}"

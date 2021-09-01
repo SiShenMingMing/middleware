@@ -1,0 +1,15 @@
+---
+- name: Restart tracker
+  service: name=fdfs-trackerd state=restarted
+  when: '"tracker" in hostvars[inventory_hostname].group_names'
+  tags: restart_tracker
+
+- name: Restart storage
+  service: name=fdfs-storaged state=restarted
+  when: '"storage" in hostvars[inventory_hostname].group_names'
+  tags: restart_storage
+
+#- name: Restart nginx
+#  service: name=nginx state=restarted
+#  when: '"storage" in hostvars[inventory_hostname].group_names'
+#  tags: restart_nginx

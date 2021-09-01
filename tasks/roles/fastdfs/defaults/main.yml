@@ -1,0 +1,29 @@
+---
+base_dir: /data/iuap
+middleware_path: "{{ base_dir }}/middleware"
+middleware_logs: "{{ base_dir }}/logs"
+middleware_data: "{{ base_dir }}/workdir"
+
+fastdfs_version: 5.11
+libfastcommon_version: 1.0.39
+
+nginx_user: nginx
+nginx_group: "{{ nginx_user }}"
+
+fastdfs_user: fastdfs
+fastdfs_group: "{{ fastdfs_user }}"
+
+storage_port: 23000
+storage_group_name: group1
+base_path_storage: "{{ middleware_data }}/fastdfs/storage"
+base_path0_storage: "{{ middleware_data }}/fastdfs/storage_data"
+
+tracker_port: 22122
+tracker_max_connections: 256
+base_path_tracker: "{{ middleware_data }}/fastdfs/tracker"
+
+http_server_port: 80
+nginx_package: nginx-1.14.2
+
+base_path_client: "{{ middleware_data }}/fastdfs/client"
+

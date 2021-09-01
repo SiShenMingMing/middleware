@@ -1,0 +1,15 @@
+---
+- include: install.yml
+  tags: zookeeper-install
+
+- include: start.yml
+  tags: zookeeper-restart
+
+- include: stop.yml
+  tags: zookeeper-stop
+
+- include: status.yml
+  tags: zookeeper-check_status
+
+- include: uninstall.yml
+  tags: zookeeper-uninstall

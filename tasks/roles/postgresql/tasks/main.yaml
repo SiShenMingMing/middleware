@@ -1,0 +1,2 @@
+- include: postgresql-install.yaml
+  tags: postgresql-install

@@ -1,0 +1,67 @@
+server {
+    listen       {{ http_server_port }};
+    server_name  localhost;
+
+    access_log {{ middleware_path }}/nginx/fastdfs_access.log  main;
+    error_log {{ middleware_logs }}/nginx/fastdfs_error.log notice;
+
+	set_by_lua $uuid '
+	    if ngx.var.http_X_traceId == nil then
+	        return string.sub(ngx.var.request_id,17,-1)
+	    else
+	        return ngx.var.http_X_traceId
+	    end
+    ';
+
+	set_by_lua $span_id '
+	    if ngx.var.http_X_spanId == nil then
+	        return ngx.var.uuid
+	    else
+	        return ngx.var.http_X_spanId
+	    end
+	';
+
+    location ~ /group[0-9]/M00/(.*)@(.*)$ {
+        alias {{ base_path0_storage }}/data;
+        ngx_fastdfs_module;
+
+        set $img_name $1;
+        set $img_param $2;
+
+        if ( $img_param ~* "([\d]+)h_([\d]+)w"){
+            set $img_height $1;
+            set $img_width $2;
+        }
+
+        if ( $img_param ~* "([\d]+)h"){
+            set $img_height $1;
+            set $img_width -;
+        }
+
+        if ( $img_param ~* "([\d]+)w"){
+            set $img_height -;
+            set $img_width $1;
+        }
+
+        rewrite /group1/M00/(.*)@(.*)$ /group1/M00/$1 break;
+
+        image_filter resize $img_width $img_height;
+        image_filter_buffer 5M;
+        image_filter_jpeg_quality 80;
+        image_filter_transparency on;
+
+        proxy_cache content_image;
+        proxy_cache_key $request_uri$is_args$args;
+        proxy_cache_valid 200 304 12h;
+        expires 30d;
+    }
+
+    location ~ /group[0-9]/ {
+        ngx_fastdfs_module;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+    root   html;
+    }
+}

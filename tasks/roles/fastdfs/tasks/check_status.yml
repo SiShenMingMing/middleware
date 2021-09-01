@@ -1,0 +1,73 @@
+---
+- block:
+  - name: Check if tracker is running
+    command: systemctl status fdfs-trackerd
+    ignore_errors: true
+    changed_when: false
+    register: service_status_tracker
+
+  - name: Report status of tracker
+    fail:
+      msg: |
+        Service fdfs-trackerd is not running.
+        Output of `systemctl status fdfs-trackerd`
+        {{ service_status_tracker.stdout }}
+        {{ service_status_tracker.stderr }}
+    when: service_status_tracker is failed
+
+  - name: Check tracker port {{ tracker_port }} active
+    wait_for:
+      timeout: 20
+      port: "{{ tracker_port }}"
+      host: "{{ inventory_hostname }}"
+      sleep: 2
+  when: '"tracker" in hostvars[inventory_hostname].group_names'
+
+- block:
+  - name: Check if storage is running
+    command: systemctl status fdfs-storaged
+    ignore_errors: true
+    changed_when: false
+    register: service_status_storage
+
+  - name: Report status of storage
+    fail:
+      msg: |
+        Service fdfs-storaged is not running.
+        Output of `systemctl status fdfs-storaged`
+        {{ service_status_storage.stdout }}
+        {{ service_status_storage.stderr }}
+    when: service_status_storage is failed
+
+  - name: Check storage port {{ storage_port }} active
+    wait_for:
+      timeout: 20
+      port: "{{ storage_port }}"
+      host: "{{ inventory_hostname }}"
+      sleep: 2
+  when: '"storage" in hostvars[inventory_hostname].group_names'
+
+
+- block:
+  - name: Check if nginx is running
+    command: systemctl status nginx
+    ignore_errors: true
+    changed_when: false
+    register: service_status_nginx
+
+  - name: Report status of nginx
+    fail:
+      msg: |
+        Service nginx is not running.
+        Output of `systemctl status nginx`
+        {{ service_status_nginx.stdout }}
+        {{ service_status_nginx.stderr }}
+    when: service_status_nginx is failed
+
+  - name: Check nginx port {{ http_server_port }} active
+    wait_for:
+      timeout: 20
+      port: "{{ http_server_port }}"
+      host: "{{ inventory_hostname }}"
+      sleep: 2
+  when: '"storage" in hostvars[inventory_hostname].group_names'

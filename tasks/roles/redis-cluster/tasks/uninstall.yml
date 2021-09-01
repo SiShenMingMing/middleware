@@ -1,0 +1,12 @@
+---
+- include: redis_uninstall.yml
+  when:
+    - redis_port is defined
+
+- include: sentinel_uninstall.yml
+  when:
+    - redis_sentinel_port is defined
+
+- include: cluster_uninstall.yml
+  when:
+    - redis_master_port is defined

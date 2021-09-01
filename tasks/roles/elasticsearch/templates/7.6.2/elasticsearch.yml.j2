@@ -1,0 +1,15 @@
+cluster.name: {{CLUSTER_NAME}}
+node.name: node-{{ES_NODE_NUM}}
+network.host: {{ES_HOST}}
+http.port: {{ES_PORT1}}
+transport.tcp.port: {{ES_PORT2}}
+node.master: true
+node.data: true
+discovery.seed_hosts: {{clusterInfo}}
+cluster.initial_master_nodes: {{clusterInfo}}
+discovery.zen.minimum_master_nodes: {{clusterMode}}
+gateway.recover_after_nodes: {{clusterMode}}
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+xpack.ml.enabled: false
+# xpack.sql.enabled: false

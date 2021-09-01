@@ -1,0 +1,97 @@
+---
+- name: set vars
+  set_fact:
+    es_dir: "{{ middlewareDir }}/elasticsearch-{{ ES_VERSION }}-{{ ES_PORT1 }}"
+
+- include: java.yml
+
+- name: create user
+  user:
+    name: elasticsearch
+    state: present
+
+- name: clean directory
+  file:
+    path: "{{es_dir}}"
+    state: absent
+
+- name: create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ es_dir }}"
+    - "{{ es_dir }}/data"
+    - "{{ es_dir }}/logs"
+    - "{{ es_dir }}/run"
+    - "{{ es_dir }}/plugins"
+    - "{{ es_dir }}/extend"
+
+- name: Install dependencies
+  package: name={{ item }} state=present
+  with_items:
+    - unzip
+
+
+- name: untar elasticsearch package
+  unarchive:
+    src: '{{PACKAGES_DIR}}/packages/middleware/elasticsearch/elasticsearch-{{ ES_VERSION | replace("v","")}}.tar.gz'
+    dest: "/tmp"
+    copy: yes
+    mode: "0755"
+
+- name: copy elasticsearch
+  shell: cp -r /tmp/elasticsearch-{{ ES_VERSION | replace("v","")}}/* "{{es_dir}}"
+
+- name: es vm option for xmx
+  shell: expr $(free -m | awk NR==2'{print $2}') / 4
+  register: esXmx
+
+- name: config elasticsearch
+  template: src="{{ES_VERSION| replace("v","")}}/elasticsearch.yml.j2" dest="{{ es_dir }}/config/elasticsearch.yml"
+
+- name: optimize elasticsearch v5.6.2 v7.3.2 v7.6.2 xms
+  lineinfile:
+    dest: "{{ es_dir }}/config/jvm.options"
+    state: present
+    regexp: "^-Xms"
+    line: "-Xms{{esXmx.stdout}}m"
+  when:  ES_VERSION  ==  "v5.6.2" or ES_VERSION  ==  "v7.3.2" or  ES_VERSION  ==  "v7.6.2"
+
+- name: optimize elasticsearch v5.6.2 v7.3.2 v7.6.2 xmx
+  lineinfile:
+    dest: "{{ es_dir }}/config/jvm.options"
+    state: present
+    regexp: "^-Xmx"
+    line: "-Xmx{{esXmx.stdout}}m"
+  when:  ES_VERSION  ==  "v5.6.2" or ES_VERSION  ==  "v7.3.2" or  ES_VERSION  ==  "v7.6.2"
+
+- name: systemd file
+  template: src="{{ES_VERSION| replace("v","")}}/elasticsearch.service.j2" dest="/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}.service"
+
+- name: Configure IPv4 Forward
+  lineinfile:
+    dest: /etc/sysctl.conf
+    state: present
+    regexp: "^vm.max_map_count"
+    line: "vm.max_map_count=262144"
+
+- name: Apply kernel parameters
+  shell: "sysctl -p /etc/sysctl.conf"
+  ignore_errors: true
+
+- name: set es path owner
+  file:
+    path: "{{ es_dir }}"
+    owner: elasticsearch
+    group: elasticsearch
+    recurse: yes
+    mode: "0755"
+
+- name: start elasticsearch
+  systemd:
+    name: "elasticsearch-{{ES_PORT1}}"
+    state: started
+    enabled: true
+    daemon-reload: true

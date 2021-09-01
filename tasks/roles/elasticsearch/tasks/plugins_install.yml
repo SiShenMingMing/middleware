@@ -1,0 +1,16 @@
+---
+- include: plugins_v2.4.6_install.yml
+  when:  ES_VERSION  == "v2.4.6"
+
+- include: plugins_v5.6.2_install.yml
+  when:  ES_VERSION  == "v5.6.2"
+
+- include: plugins_v7.3.2_install.yml
+  when:  ES_VERSION  == "v7.3.2"
+
+- include: plugins_v7.6.2_install.yml
+  when:  ES_VERSION  == "v7.6.2"
+
+- name: restart es server
+  include: restart.yml
+

@@ -1,0 +1,33 @@
+
+- include: common.yml
+  tags: tracker, storage, install
+
+- include: fdfs-tracker.yml
+  when: '"tracker" in hostvars[inventory_hostname].group_names'
+  tags: install, tracker
+
+- include: fdfs-storage.yml
+  when: '"storage" in hostvars[inventory_hostname].group_names'
+  tags: install, storage
+
+- include: nginx.yml
+  when: '"storage" in hostvars[inventory_hostname].group_names'
+  tags: install, nginx
+
+- include: client.yml
+  run_once: true
+  tags: test_upload
+
+- include: check_status.yml
+  tags: check_status
+
+- include: stop.yml
+  tags: stop
+
+- include: restart.yml
+  tags: restart
+
+- include: uninstall.yml
+  tags: uninstall
+
+

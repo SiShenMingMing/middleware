@@ -1,0 +1,16 @@
+---
+
+- name: uninstall
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}-cerebro.service"
+    - "/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}-head.service"
+  when:  ES_VERSION  == "v5.6.2" or  ES_VERSION  == "v7.3.2" or  ES_VERSION == "v7.6.2"
+
+
+
+
+
+

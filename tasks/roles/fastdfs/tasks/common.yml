@@ -1,0 +1,80 @@
+- name: Install Dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gcc
+    - perl
+    - perl-devel
+
+- name: Unarchive libfastcommon
+  unarchive:
+    #src: "libfastcommon-{{ libfastcommon_version }}.tar.gz"
+    src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/libfastcommon-{{ libfastcommon_version }}.tar.gz"
+    dest: "/tmp/"
+    creates: "/tmp/libfastcommon-{{ libfastcommon_version }}/make.sh"
+
+- name: Make and install
+  shell: >-
+    cd /tmp/libfastcommon-{{ libfastcommon_version }} &&
+    ./make.sh &&
+    ./make.sh install
+
+- name: Set link
+  file: src={{ item.path }} dest={{ item.dest }} state=link
+  with_items:
+    - {"path": "/usr/lib64/libfastcommon.so", "dest": "/usr/local/lib/libfastcommon.so"}
+    - {"path": "/usr/lib64/libfdfsclient.so", "dest": "/usr/local/lib/libfdfsclient.so"}
+    - {"path": "/usr/lib64/libfdfsclient.so", "dest": "/usr/lib/libfdfsclient.so"}
+  ignore_errors: true
+
+- name: Clean libfastcommon
+  file: state=absent path=/tmp/libfastcommon-{{ libfastcommon_version }}
+
+- name: Unarchive fastdfs file
+  unarchive:
+    #src: "fastdfs-{{ fastdfs_version }}.tar.gz"
+    src: "{{PACKAGES_DIR}}/packages/middleware/fastdfs/fastdfs-{{ fastdfs_version }}.tar.gz"
+    dest: /tmp/
+    creates: "/tmp/fastdfs-{{ fastdfs_version }}/make.sh"
+
+- name: FastDFS make and install
+  shell: >-
+    cd /tmp/fastdfs-{{ fastdfs_version }} &&
+    ./make.sh &&
+    ./make.sh install
+
+- name: Copy config to /etc/fdfs
+  copy: mode=preserve remote_src=yes src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - {"src": "/etc/fdfs/tracker.conf.sample", "dest": "/etc/fdfs/tracker.conf"}
+    - {"src": "/etc/fdfs/storage.conf.sample", "dest": "/etc/fdfs/storage.conf"}
+    - {"src": "/etc/fdfs/client.conf.sample", "dest": "/etc/fdfs/client.conf"}
+    - {"src": "/tmp/fastdfs-{{ fastdfs_version }}/conf/http.conf", "dest": "/etc/fdfs/http.conf"}
+    - {"src": "/tmp/fastdfs-{{ fastdfs_version }}/conf/mime.types", "dest": "/etc/fdfs/mime.types"}
+    - {"src": "/tmp/fastdfs-{{ fastdfs_version }}/conf/anti-steal.jpg", "dest": "/etc/fdfs/anti-steal.jpg"}
+
+- name: check if fastdfs user exists (ignore errors)
+  command: id {{ fastdfs_user }}
+  ignore_errors: yes
+  changed_when: false
+  register: user_exists
+
+- name: add fastdfs group
+  group:
+    name: "{{ fastdfs_group }}"
+    state: present
+  when: user_exists is failed
+
+- name: add fastdfs user
+  user:
+    name: "{{ fastdfs_user }}"
+    group: "{{ fastdfs_group }}"
+    comment: "FastDFS"
+    create_home: no
+    shell: /bin/false
+    system: yes
+  when: user_exists is failed
+
+- name: Clean FastDFS file
+  file: state=absent path=/tmp/fastdfs-{{ fastdfs_version }}

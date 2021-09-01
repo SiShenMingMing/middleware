@@ -1,0 +1,30 @@
+---
+base_dir: /data/iuap
+middleware_path: "{{ base_dir }}/middleware"
+middleware_logs: "{{ base_dir }}/logs"
+middleware_data: "{{ base_dir }}/workdir"
+middleware_backup: "{{ base_dir }}/backup"
+
+src_dir: /usr/local/src
+nginx_src_dir: "{{ src_dir }}/nginx_src"
+
+nginx_download_path: /data/nginx/download/dc_packages
+
+nginx_user: nginx
+nginx_group: "{{ nginx_user }}"
+nginx_version: 1.18.0
+nginx_package: "nginx-{{ nginx_version }}.tar.gz"
+nginx_build: true
+
+scp_user_name: developerupload
+php_user_name: apache
+php_user_group: "{{ php_user_name }}"
+
+nginx_port: 80
+
+nginx_log_format: |-
+  '$remote_addr - $remote_user [$time_local] "$request" '
+  '$status $body_bytes_sent "$http_referer" '
+  '"$http_user_agent" "$http_x_forwarded_for"'
+
+install_php: false

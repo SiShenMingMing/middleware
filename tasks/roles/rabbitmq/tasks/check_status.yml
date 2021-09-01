@@ -1,0 +1,25 @@
+---
+
+# 检查状态
+- name: check rabbitmq status
+  command: systemctl status rabbitmq-server-{{ rabbitmq_port }}
+  ignore_errors: true
+  changed_when: false
+  register: rabbitmq_status
+
+# 报告状态
+- name: report status 
+  fail:
+    msg: |
+      Service rabbitmq is not running.
+      Output of `systemctl status rabbitmq-server-{{ rabbitmq_port }}`
+      {{ rabbitmq_status.stdout }}
+      {{ rabbitmq_status.stderr }}
+  when: rabbitmq_status is failed
+
+- name: Check rabbitmq port {{ rabbitmq_port }} active
+  wait_for:
+    timeout: 20
+    port: "{{ rabbitmq_port }}"
+    host: "{{ inventory_hostname }}"
+    sleep: 2

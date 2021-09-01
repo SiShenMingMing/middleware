@@ -1,0 +1,14 @@
+cluster.name: {{CLUSTER_NAME}}
+node.name: node-{{ES_NODE_NUM}}
+network.host: {{ES_HOST}}
+http.port: {{ES_PORT1}}
+transport.tcp.port: {{ES_PORT2}}
+node.master: true
+node.data: true
+discovery.zen.ping.unicast.hosts: {{clusterInfo}}
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+script.inline: on
+script.indexed: on
+script.file: on
+xpack.ml.enabled: false

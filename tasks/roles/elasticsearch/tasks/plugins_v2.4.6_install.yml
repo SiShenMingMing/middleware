@@ -1,0 +1,63 @@
+---
+- name: set es base dir
+  set_fact:
+    es_dir: "{{ middlewareDir }}/elasticsearch-{{ ES_VERSION }}-{{ ES_PORT1 }}"
+    es_plugins_dir: "{{ es_dir }}/plugins"
+
+- name: create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ es_plugins_dir }}/icu"
+    - "{{ es_plugins_dir }}/delete-by-query"
+    - "{{ es_plugins_dir }}/ansj"
+    - "{{ es_plugins_dir }}/ik"
+    - "{{ es_plugins_dir }}/pinyin"
+    - "{{ es_plugins_dir }}/head"
+    - "{{ es_plugins_dir }}/kopf"
+    - "{{ es_plugins_dir }}/sql"
+    - "{{ es_plugins_dir }}/siren-join"
+
+- name: install es plugin
+  unarchive:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    copy: yes
+    mode: "0755"
+  with_items:
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/analysis-icu-2.4.6.zip", dest: "{{ es_plugins_dir }}/icu"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/delete-by-query-2.4.6.zip", dest: "{{ es_plugins_dir }}/delete-by-query"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-analysis-ansj-2.4.6.0-release.zip", dest: "{{ es_plugins_dir }}/ansj"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-analysis-ik-1.10.6.zip", dest: "{{ es_plugins_dir }}/ik"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-analysis-pinyin-1.8.5.zip", dest: "{{ es_plugins_dir }}/pinyin"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-head-1.x.zip", dest: "{{ es_plugins_dir }}/head"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-kopf-2.1.1.zip", dest: "{{ es_plugins_dir }}/kopf"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/elasticsearch-sql-2.4.6.0.zip", dest: "{{ es_plugins_dir }}/sql"}
+    - { src: "{{PACKAGES_DIR}}/packages/middleware/elasticsearch/plugins_v2.4.6/siren-join-2.4.5.zip", dest: "{{ es_plugins_dir }}/siren-join"}
+
+- name: mv plugins to
+  shell: mv {{item.src}}/* {{item.dest}}
+  with_items:
+    - {src: "{{ es_plugins_dir }}/ansj/elasticsearch-analysis-ansj-2.4.6.0", dest: "{{ es_plugins_dir }}/ansj"}
+    - {src: "{{ es_plugins_dir }}/head/elasticsearch-head-1.x", dest: "{{ es_plugins_dir }}/head"}
+    - {src: "{{ es_plugins_dir }}/kopf/elasticsearch-kopf-2.1.1", dest: "{{ es_plugins_dir }}/kopf"}
+    - {src: "{{ es_plugins_dir }}/sql/elasticsearch-sql-2.4.6.0", dest: "{{ es_plugins_dir }}/sql"}
+
+- name: config pinyin plugin
+  shell: |
+    sed -i '/^elasticsearch.version=/c elasticsearch.version=2.4.6' "{{ es_plugins_dir }}/pinyin/plugin-descriptor.properties"
+
+- name: config siren-join plugin
+  shell: |
+    sed -i '/^elasticsearch.version=/c elasticsearch.version=2.4.6' "{{ es_plugins_dir }}/siren-join/plugin-descriptor.properties"
+
+
+- name: set es path owner
+  file:
+    path: "{{ es_dir }}"
+    owner: elasticsearch
+    group: elasticsearch
+    recurse: yes
+    mode: "0755"

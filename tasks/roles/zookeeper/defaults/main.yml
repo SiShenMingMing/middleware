@@ -1,0 +1,27 @@
+---
+base_dir: /data/iuap
+middleware_path: "{{ base_dir }}/middleware"
+middleware_logs: "{{ base_dir }}/logs"
+middleware_data: "{{ base_dir }}/workdir"
+middleware_backup: "{{ base_dir }}/backup"
+middleware_temp: "{{ base_dir }}/temp"
+
+zookeeper_user: zookeeper
+zookeeper_group: "{{ zookeeper_user }}"
+
+package_name: apache-zookeeper-3.6.2-bin.tar.gz
+monasca_log_level: WARN
+zookeeper_maxClientCnxns: 60
+zookeeper_client_port: 2181
+zookeeper_cluster_port1: 2888
+zookeeper_cluster_port2: 3888
+monasca_wait_for_period: 30
+
+# Variables only for RedHat family
+monasca_download_dir: "/opt/monasca/"
+zookeeper_version: 3.4.9
+#zookeeper_url: https://archive.apache.org/dist/zookeeper/zookeeper-{{zookeeper_version}}/zookeeper-{{zookeeper_version}}.tar.gz
+zookeeper_dir: "{{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}"
+zookeeper_data_dir: "{{ zookeeper_dir }}/data"
+zookeeper_log_dir: "{{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}/logs"
+zookeeper_conf_dir: "{{ middleware_path }}/zookeeper-{{ zookeeper_client_port }}/conf"

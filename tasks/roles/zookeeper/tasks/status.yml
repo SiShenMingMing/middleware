@@ -1,0 +1,23 @@
+- name: Zookeeper status
+  shell: "{{ zookeeper_dir }}/bin/zkServer.sh status"
+  register: zk_status
+  ignore_errors: true
+
+- name: print stdout
+  debug:
+    msg: "{{ zk_status.stdout.split('\n')[-1] }}"
+
+- name: Zookeeper status
+  shell: "systemctl status zookeeper-{{zookeeper_client_port}}"
+  ignore_errors: true
+  changed_when: false
+  register: service_status
+
+- name: Report status of zookeeper
+  fail:
+    msg: |
+      Service zookeeper-{{zookeeper_client_port}} is not running.
+      Output of `systemctl status zookeeper-{{zookeeper_client_port}}`
+      {{ service_status.stdout }}
+      {{ service_status.stderr }}
+  when: service_status is failed

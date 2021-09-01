@@ -1,0 +1,32 @@
+---
+- name: Create storage data path
+  file: path={{ item }} state=directory owner={{ fastdfs_user }} group={{ fastdfs_group }}
+  with_items:
+    - "{{ base_path_storage }}"
+    - "{{ base_path0_storage }}"
+  tags: fdfs-storage
+
+- name: Copy config file
+  template: src=storage.conf.j2 dest=/etc/fdfs/storage.conf
+  tags: fdfs-storage
+
+- name: Add systemd file
+  template: src=system/fdfs-storaged.service.j2 dest=/usr/lib/systemd/system/fdfs-storaged.service
+  tags: fdfs-storage
+
+- name: Systemd daemon reload
+  systemd: daemon_reload=yes
+  tags: fdfs-storage
+
+- name: Start storage
+  systemd: state=restarted name=fdfs-storaged enabled=yes
+  tags: fdfs-storage
+
+- name: Waiting storage start
+  wait_for:
+    timeout: 180
+    delay: 10
+    port: "{{ storage_port }}"
+    host: "{{ inventory_hostname }}"
+    sleep: 5
+  tags: fdfs-storage

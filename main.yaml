@@ -1,25 +1,42 @@
 ---
 
-# - hosts: azq
-#   gather_facts: no
+## mysql 数据库 inventory/hosts.ini
+- hosts: mysql
+  gather_facts: no
+  roles:
+    - { role: mysql }
+
+## postgresql管理 inventory/hosts.ini
+- hosts: postgresql
+  gather_facts: no
+  roles:
+    - { role: postgresql }
+
+
+
+
+
+
+
+
+
+
+
+## zookeeper 管理  inventory/zookeeper.ini
+# - hosts: zookeeper-host
 #   roles:
-#     - role: azq
-#   tags: azq
-
-## 安装数据库
-- hosts: mysql
-  gather_facts: no
-  roles:
-  - { role: mysql, action: mysql-install, tags: mysql-install }
-
-## 卸载数据库
-- hosts: mysql
-  gather_facts: no
-  roles:
-  - { role: mysql, action: mysql-uninstall, tags: mysql-uninstall }
+#   - { role: zookeeper }
 
 
+# ## kafka 管理  inventory/kafka.ini
+# - hosts: kafka
+#   vars:
+#     kafka_hosts: "{{ groups.kafka | list }}"
+#     kafka_zookeeper_hosts: "{{ groups['zookeeper-host'] | list }}"
+#   roles:
+#   - { role: kafka }
 
+  
 # #备份数据库
 # - hosts: mysql
 #   gather_facts: no
@@ -30,11 +47,6 @@
 #   tags: mysql-bak
 
 
-## 安装pg数据库
-- hosts: postgresql
-  gather_facts: no
-  roles:
-  - { role: postgresql, action: postgresql-install, tags: postgresql-install }
 
 
 

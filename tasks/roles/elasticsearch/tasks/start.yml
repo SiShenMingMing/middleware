@@ -1,0 +1,3 @@
+---
+- name: Start elasticsearch
+  systemd: state=started name=elasticsearch-{{ES_PORT1}}

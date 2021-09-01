@@ -1,0 +1,4 @@
+## mongodb 管理  inventory/mongodb.ini
+- hosts: mongo_master,mongo_replicas
+  roles:
+  - { role: mongodb }

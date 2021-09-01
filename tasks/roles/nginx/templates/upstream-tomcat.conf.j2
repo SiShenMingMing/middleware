@@ -1,0 +1,35 @@
+server {
+    listen       {{ nginx_port }} default;
+    server_name  localhost;
+    proxy_http_version 1.1;
+
+    if ($time_iso8601 ~ "^(d{4})-(d{2})-(d{2})") {
+        set $log_year $1;
+        set $log_month $2;
+        set $log_day $3;
+    }
+
+    set_by_lua $uuid '
+        if ngx.var.http_X_traceId == nil then
+            return string.sub(ngx.var.request_id,17,-1)
+        else
+            return ngx.var.http_X_traceId
+        end
+    ';
+
+    set_by_lua $span_id '
+        if ngx.var.http_X_spanId == nil then
+            return ngx.var.uuid
+        else
+            return ngx.var.http_X_spanId
+        end
+    ';
+
+	access_log {{ middleware_path }}/nginx/tomcat_access.$log_year-$log_month-$log_day.log  main;
+	error_log {{ middleware_path }}/nginx/tomcat_error.log notice;
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   html;
+    }
+}

@@ -1,0 +1,15 @@
+---
+- name: set vars
+  set_fact:
+    es_dir: "{{ middlewareDir }}/elasticsearch-{{ ES_VERSION }}-{{ ES_PORT1 }}"
+
+- name: Stop elasticsearch
+  systemd:
+    state: stopped
+    name: elasticsearch-{{ES_PORT1}}
+
+- name: Uninstall elasticsearch
+  file: state=absent path={{ item }}
+  with_items:
+  - "{{ es_dir }}/"
+  - "/usr/lib/systemd/system/elasticsearch-{{ES_PORT1}}.service"

@@ -1,0 +1,196 @@
+---
+- name: check if middleware directory exists
+  stat:
+    path: "{{ middleware_path }}"
+  register: middleware_data_dir
+  changed_when: false
+
+- name: create middleware install directory
+  file:
+    path: "{{ middleware_path }}"
+    state: directory
+    mode: 0755
+    recurse: yes
+  when:
+    - not middleware_data_dir.stat.exists
+
+- name: check if middleware backup directory exists
+  stat:
+    path: "{{ middleware_backup }}"
+  register: middleware_backup_dir
+  changed_when: false
+
+- name: create middleware backup directory
+  file:
+    path: "{{ middleware_backup }}"
+    state: directory
+    mode: 0755
+    recurse: yes
+  when:
+    - not middleware_backup_dir.stat.exists
+
+# 拷贝erlang包
+- name: copy erlang package
+  copy: src={{PACKAGES_DIR}}/packages/middleware/rabbitmq/{{ erlang_package }} dest=/tmp/
+
+# 安装erlang环境
+- name: install erlang
+  command: rpm -ivh --force /tmp/{{ erlang_package }}
+
+# 升级openssl-libs
+- name: upload openssl lib
+  yum: name=openssl-libs state=latest
+
+# # 检查hosts配置
+# - name: check host
+#   shell: "grep -w {{hostvars[item].rabbitmq_hostname}} /etc/hosts"
+#   register: result
+#   ignore_errors: true
+#   with_items: "{{groups['rabbitmq-hosts']}}"
+
+# # 配置hosts
+# - name: add hosts
+#   shell: echo {{item.item}} {{hostvars[item.item].rabbitmq_hostname}} >> /etc/hosts
+#   with_items: "{{result.results}}"
+#   when: item.rc == 1
+
+# 配置hosts
+- name: add hosts
+  lineinfile: path=/etc/hosts line="{{ item }} {{ hostvars[item].rabbitmq_hostname }}" unsafe_writes=yes
+  with_items: "{{ groups['rabbitmq-hosts'] }}"
+
+# 配置erlang cookie
+- name: copy cookie to root
+  copy: src=.erlang.cookie dest=/root/.erlang.cookie mode=400
+- name: copy cookie to install dir
+  copy: src=.erlang.cookie dest=/usr/lib64/erlang/bin/.erlang.cookie mode=400
+
+# 拷贝rabbitmq
+- name: copy rabbitmq package
+  copy: src={{PACKAGES_DIR}}/packages/middleware/rabbitmq/{{ rabbitmq_package }} dest=/tmp
+
+# 解压rabbitmq
+- name: unarchive rabbitmq package
+  unarchive: src=/tmp/{{ rabbitmq_package }} dest={{ middleware_path }} copy=no
+
+# 获取rabbitmq解压包名
+- name: get rabbitmq package name
+  shell: tar -tf /tmp/{{ rabbitmq_package }} | head -1
+  register: result
+  ignore_errors: true
+
+# 修改解压包路径
+- name: change rabbitmq dirname
+  shell: mv {{ middleware_path }}/{{ result.stdout }} {{ rabbitmq_dir }}
+
+# 配置plugin config
+- name: add plugin config
+  copy: src=enabled_plugins dest={{ rabbitmq_dir }}/etc/rabbitmq/enabled_plugins
+
+# rabbitmq env配置
+- name: add rabbitmq env config
+  template:
+    src: rabbitmq-env.conf.j2
+    dest: "{{ rabbitmq_dir }}/etc/rabbitmq/rabbitmq-env.conf"
+
+# rabbitmq 主配置
+- name: add rabbitmq config
+  template:
+    src: rabbitmq.config
+    dest: "{{ rabbitmq_dir }}/etc/rabbitmq/rabbitmq.config"
+
+# 拷贝插件文件
+- name: copy plugins file
+  copy: src={{PACKAGES_DIR}}/packages/middleware/rabbitmq/{{ item }} dest={{ rabbitmq_dir }}/plugins/
+  with_items:
+    - prometheus_rabbitmq_exporter/
+    - rabbitmq_delayed_message_exchange-3.8.0.ez
+
+# 服务控制配置
+- name: add service config
+  template:
+    src: rabbitmq-server.service.j2
+    dest: /usr/lib/systemd/system/rabbitmq-server-{{ hostvars[inventory_hostname].rabbitmq_port }}.service
+
+- name: check if rabbitmq user exists (ignore errors)
+  command: id {{ rabbitmq_user }}
+  ignore_errors: yes
+  changed_when: false
+  register: user_exists
+
+- name: add rabbitmq group
+  group:
+    name: "{{ rabbitmq_group }}"
+    state: present
+  when: user_exists is failed
+
+- name: add rabbitmq user
+  user:
+    name: "{{ rabbitmq_user }}"
+    group: "{{ rabbitmq_group }}"
+    comment: "RabbitMQ"
+    create_home: no
+    shell: /bin/false
+    system: yes
+  when: user_exists is failed
+
+- name: change ownership on rabbitmq directory.
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ rabbitmq_user }}"
+    group: "{{ rabbitmq_group }}"
+    recurse: yes
+  with_items:
+    - "{{ rabbitmq_dir }}"
+    - /usr/lib64/erlang
+
+# 检查服务启动状态
+- name: check rabbitmq status
+  shell: ss -ntul | grep -w {{ hostvars[inventory_hostname].rabbitmq_port }}
+  register: result
+  ignore_errors: true
+
+# 启动服务
+- name: start rabbitmq
+  service: state=started name=rabbitmq-server-{{ rabbitmq_port }} enabled=yes daemon_reload=yes
+  when: result.rc != 0
+
+- name: check rabbitmq status
+  wait_for:
+    port: "{{ rabbitmq_port }}"
+    delay: 15
+    state: started
+    timeout: 120
+
+# 配置用户/密码
+- block:
+  - name: config rabbitmq user/password
+    shell: "{{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} add_user {{ username }} {{ password }}"
+    ignore_errors: true
+
+  - name: config rabbitmq role
+    shell: "{{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} set_user_tags {{ username }} administrator"
+    ignore_errors: true
+
+  - name: config rabbitmq auth
+    shell: '{{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} set_permissions -p / {{ username }} ".*" ".*" ".*"'
+    ignore_errors: true
+  when: "hostvars[inventory_hostname].server_num == 1"
+
+# 配置集群
+- name: config cluster
+  shell: >-
+    {{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} stop_app &&
+    {{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} reset &&
+    {{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} join_cluster rabbit1@mqnode1 &&
+    {{ rabbitmq_dir }}/sbin/rabbitmqctl -n {{ node_name }} start_app
+  when:
+    - groups['rabbitmq-hosts'] | length > 1
+    - role == 'slave'
+
+# 配置policy
+- name: config ha
+  shell: >-
+    {{ rabbitmq_dir }}/sbin/rabbitmqctl set_policy ha-all "^" '{"ha-mode":"all"}'
+  when: server_num == (groups['rabbitmq-hosts'] | length)

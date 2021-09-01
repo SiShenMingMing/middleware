@@ -1,0 +1,26 @@
+- include: install.yml
+  tags: elasticsearch-install
+
+- include: plugins_install.yml
+  tags: elasticsearch-install
+
+- include: check_status.yml
+  tags: elasticsearch-check_status
+
+- include: set_security.yml
+  tags: elasticsearch-set_security
+
+- include: start.yml
+  tags: elasticsearch-start
+
+- include: stop.yml
+  tags: elasticsearch-stop
+
+- include: restart.yml
+  tags: elasticsearch-restart
+
+- include: plugins_uninstall.yml
+  tags: elasticsearch-uninstall
+
+- include: uninstall.yml
+  tags: elasticsearch-uninstall

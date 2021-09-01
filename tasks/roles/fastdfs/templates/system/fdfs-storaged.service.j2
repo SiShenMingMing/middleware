@@ -1,0 +1,13 @@
+[Unit]
+Description=The fastdfs storage server
+After=network.target fdfs-trackerd.service
+
+[Service]
+Type=forking
+Restart=always
+PIDFile={{ base_path_storage }}/data/fdfs_storaged.pid
+ExecStart=/usr/bin/fdfs_storaged /etc/fdfs/storage.conf start
+ExecStop=/usr/bin/fdfs_storaged /etc/fdfs/storage.conf stop
+
+[Install]
+WantedBy=multi-user.target

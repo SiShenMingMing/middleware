@@ -1,0 +1,26 @@
+
+---
+# 停止服务
+- name: stop service
+  shell: >-
+    systemctl daemon-reload &&
+    systemctl stop rabbitmq-server-{{ rabbitmq_port }} &&
+    systemctl disable rabbitmq-server-{{ rabbitmq_port }}
+  ignore_errors: true
+
+# 清理已存在的备份
+- name: clear rabbitmq bak
+  file: state=absent path="{{ middleware_backup }}/rabbitmq-{{ rabbitmq_port }}.{{ ansible_date_time.date }}.bak"
+
+# 备份数据文件
+- name: bak rabbitmq
+  shell: mv {{ rabbitmq_dir }} {{ middleware_backup }}/rabbitmq-{{ rabbitmq_port }}.{{ ansible_date_time.date }}.bak
+  ignore_errors: true
+
+# 删除服务控制
+- name: delete service file
+  file: name="/usr/lib/systemd/system/rabbitmq-server-{{ rabbitmq_port }}.service" state=absent
+
+- name: reset hosts
+  lineinfile: path=/etc/hosts line="{{ item }} {{ hostvars[item].rabbitmq_hostname }}" state=absent unsafe_writes=yes
+  with_items: "{{ groups['rabbitmq-hosts'] }}"

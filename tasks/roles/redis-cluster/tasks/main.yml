@@ -1,0 +1,27 @@
+---
+- include: download.yml
+  tags:
+    - download
+
+- include: install.yml
+  tags:
+    - install
+
+- include: server.yml
+  when:
+    - "'redis-master' in group_names or 'redis-slave' in group_names"
+    - used_redis_config is defined
+  tags:
+    - config
+
+- include: sentinel.yml
+  when:
+    - "'redis-sentinel' in group_names"
+  tags:
+    - config
+
+- include: cluster.yml
+  when:
+    - "'redis-cluster' in group_names"
+  tags:
+    - config
