@@ -28,7 +28,8 @@ function usage(){
             diyecho "用法:\n start_job.sh rabbitmq rabbitmq-check_status"  $ECHO_COLOR   
         ;; 
         mongodb)
-            diyecho "用法:\n start_job.sh mongodb mongodb-install"  $ECHO_COLOR 
+            diyecho "安装用法:\n start_job.sh mongodb mongodb-install"  $ECHO_COLOR 
+            diyecho "卸载用法:\n start_job.sh mongodb mongodb-uninstall"  $ECHO_COLOR 
         ;; 
         zookeeper)
             diyecho "用法:\n start_job.sh zookeeper zookeeper-install"  $ECHO_COLOR
@@ -199,8 +200,11 @@ case $1 in
   mongodb)
       case $2 in
       mongodb-install)
-          ansible-playbook  -i inventory/mongodb.ini tasks/mongodb.yaml
+          ansible-playbook  -i inventory/mongodb.ini  -e "action=install"   tasks/mongodb.yaml
       ;;
+      mongodb-uninstall)
+          ansible-playbook  -i inventory/mongodb.ini  -e "action=uninstall"  tasks/mongodb.yaml
+      ;; 
       *)
         usage mongodb
         exit 1

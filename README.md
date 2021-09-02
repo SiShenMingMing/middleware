@@ -86,3 +86,7 @@ yonbip 数据库中间件部署和运维管理
 5) 调用逻辑
 
 start_job.sh ->  tasks/xxx.yaml + inventory/xxx.ini -> roles/xxx
+
+
+6) 变量设置
+

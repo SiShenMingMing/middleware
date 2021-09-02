@@ -224,3 +224,9 @@ Licensed under the GPLv2 License. See the [LICENSE.md](LICENSE.md) file for deta
 #### Feedback, bug-reports, requests, ...
 
 Are [welcome](https://github.com/UnderGreen/ansible-role-mongodb/issues)!
+
+
+
+
+参考链接:
+https://docs.ansible.com/ansible/latest/collections/community/mongodb/mongodb_replicaset_module.html

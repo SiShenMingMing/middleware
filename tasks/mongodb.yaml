@@ -1,4 +1,14 @@
+---
+
 ## mongodb 管理  inventory/mongodb.ini
-- hosts: mongo_master,mongo_replicas
+- hosts: all
   roles:
-  - { role: mongodb }
+  - { role: mongodb, when: action == "install" }
+
+
+- hosts: all
+  tasks:
+  - import_role:
+      name: mongodb
+      tasks_from: uninstall
+    when: action == "uninstall"      
