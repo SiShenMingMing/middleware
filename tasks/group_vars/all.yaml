@@ -4,24 +4,4 @@
 PACKAGES_DIR: /data/jobs/yonbip-middleware
 
 
-############ Mysql ############
-
-# mysql 安装目录
-MYSQL_DIR: /data/apps/mysql
-
-root_pass: yonbip2021!
-rw_all_db_pass: yonbip2021root!
-ro_all_db_pass: yonbip2021user!
-
-
-
-############ Postgresql ########
-
-# Postgresql 安装目录
-PG_DIR: /data/apps/postgresql
-
-PG_PORT: 5432
-
-PG_PASS: yonbip2021root!
-
 

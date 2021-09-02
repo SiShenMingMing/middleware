@@ -7,3 +7,13 @@
     file:
       path: "{{ MYSQL_DIR }}/mysql{{ MYSQL_PORT }}"
       state: absent    
+
+  - name: delete directory
+    file:
+      path: "{{ MYSQL_DIR }}/mysql{{MYSQL_PORT }}_auth.sh"
+      state: absent    
+
+  - name: delete mysql_init.sql
+    file:
+      path: "{{ MYSQL_DIR }}/mysql_init.sql"
+      state: absent  

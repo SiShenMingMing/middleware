@@ -1,0 +1,6 @@
+---
+
+## mysql 数据库 inventory/mysql.ini
+- hosts: mysql
+  roles:
+    - { role: mysql }

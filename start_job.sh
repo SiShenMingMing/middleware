@@ -70,16 +70,15 @@ function usage(){
 }
 
 
-
 case $1 in
 
   mysql)
      case $2 in
       mysql-install)
-          ansible-playbook --tags=mysql-install   -v   -e "MYSQL_PORT=$3" -i inventory/hosts.ini main.yaml
+          ansible-playbook --tags=mysql-install   -v   -e "MYSQL_PORT=$3" -i inventory/mysql.ini tasks/mysql.yaml
       ;;
       mysql-uninstall)
-          ansible-playbook --tags=mysql-uninstall -v   -e "MYSQL_PORT=$3" -i inventory/hosts.ini main.yaml
+          ansible-playbook --tags=mysql-uninstall -v   -e "MYSQL_PORT=$3" -i inventory/mysql.ini tasks/mysql.yaml
       ;;
       *)
         usage mysql
@@ -90,7 +89,7 @@ case $1 in
   postgresql)
       case $2 in
       postgresql-install)
-          ansible-playbook --tags=postgresql-install -i inventory/hosts.ini main.yaml
+          ansible-playbook --tags=postgresql-install -i inventory/postgresql.ini tasks/postgresql.yaml
       ;;
      *)
        usage postgresql

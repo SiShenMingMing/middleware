@@ -2,6 +2,16 @@
 
 yonbip 数据库中间件部署和运维管理
 
+| 中间件     | 支持模式 | 版本 | 说明                                                         |
+| ---------- | -------- | ---- | ------------------------------------------------------------ |
+| mysql      | 单机     | 5.7  | [传送门](http://git.yonyou.com/cuixls/yonbip-middleware/tree/master/tasks/roles/redis-cluster) |
+| postgresql | 单机     | 12   |                                                              |
+|            |          |      |                                                              |
+|            |          |      |                                                              |
+
+
+
+
 
 ## 清单
 
@@ -50,6 +60,7 @@ yonbip 数据库中间件部署和运维管理
 
 2)  在inventory目录下修改对应中间件的ini主机清单文件
 
+
 3)  下载工具包
 
         wget http://172.20.45.139/middlewar-packages.tar.gz
@@ -80,3 +91,8 @@ yonbip 数据库中间件部署和运维管理
         kafka          -- kafka 工具 
         elasticsearch  -- elasticsearch 工具 
         fastdfs        -- fastdfs 工具 
+
+
+5) 调用逻辑
+
+start_job.sh ->  tasks/xxx.yaml + inventory/xxx.ini -> roles/xxx

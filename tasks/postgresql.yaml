@@ -1,0 +1,6 @@
+---
+
+## postgresql管理 inventory/postgresql.ini
+- hosts: postgresql
+  roles:
+    - { role: postgresql }

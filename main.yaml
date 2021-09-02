@@ -1,16 +1,8 @@
 ---
 
-## mysql 数据库 inventory/hosts.ini
-- hosts: mysql
-  gather_facts: no
-  roles:
-    - { role: mysql }
 
-## postgresql管理 inventory/hosts.ini
-- hosts: postgresql
-  gather_facts: no
-  roles:
-    - { role: postgresql }
+
+
 
 
 
