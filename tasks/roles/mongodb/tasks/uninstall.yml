@@ -28,7 +28,7 @@
   with_items:
   - /opt/mongodb/rpm/
   - /etc/mongod.conf
-  - "{{ mongodb_storage_dbpath }}"
+  - "{{mongodb_dir}}"
   ignore_errors: true
 
 - name: Uninstall PyMongo from PIP
