@@ -2,16 +2,6 @@
 
 yonbip 数据库中间件部署和运维管理
 
-| 中间件     | 支持模式 | 版本 | 说明                                                         |
-| ---------- | -------- | ---- | ------------------------------------------------------------ |
-| mysql      | 单机     | 5.7  | [传送门](http://git.yonyou.com/cuixls/yonbip-middleware/tree/master/tasks/roles/redis-cluster) |
-| postgresql | 单机     | 12   |                                                              |
-|            |          |      |                                                              |
-|            |          |      |                                                              |
-
-
-
-
 
 ## 清单
 
