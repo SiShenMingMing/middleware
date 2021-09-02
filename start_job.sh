@@ -70,6 +70,7 @@ function usage(){
 }
 
 
+
 case $1 in
 
   mysql)

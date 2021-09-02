@@ -35,7 +35,7 @@ yonbip 数据库中间件部署和运维管理
 
     ├── inventory        主机清单模板
        
-    ├── packages         工具包源码包等
+    ├── packages         工具包源码包等（二进制文件未维护在代码库，单独下载）
 
     ├── README.md        说明文档
 
@@ -50,7 +50,13 @@ yonbip 数据库中间件部署和运维管理
 
 2)  在inventory目录下修改对应中间件的ini主机清单文件
 
-3)  执行start_job.sh
+3)  下载工具包
+
+        wget http://172.20.45.139/middlewar-packages.tar.gz
+        tar xvf middlewar-packages.tar.gz
+        rm -f middlewar-packages.tar.gz
+
+4)  执行start_job.sh
 
         chmod +x start_job.sh
         bash start_job.sh
