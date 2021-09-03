@@ -48,7 +48,10 @@ function usage(){
         ;; 
         fastdfs)
             diyecho "安装用法:\n start_job.sh fastdfs fastdfs-install"  $ECHO_COLOR
-            diyecho "卸载用法:\n start_job.sh fastdfs fastdfs-check_status"  $ECHO_COLOR
+            diyecho "端口检查:\n start_job.sh fastdfs fastdfs-check_status"  $ECHO_COLOR
+            diyecho "测试上传:\n start_job.sh fastdfs fastdfs-test_upload"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh fastdfs fastdfs-uninstall"  $ECHO_COLOR
+            
         ;;       
         nginx)
             diyecho "安装用法:\n start_job.sh nginx nginx-install"  $ECHO_COLOR
@@ -195,6 +198,12 @@ case $1 in
       ;;
       fastdfs-check_status)
           ansible-playbook --tags=check_status -i inventory/fastdfs.ini  tasks/fastdfs.yaml
+      ;;
+      fastdfs-test_upload)
+          ansible-playbook --tags=test_upload -i inventory/fastdfs.ini  tasks/fastdfs.yaml
+      ;;
+      fastdfs-uninstall)
+          ansible-playbook --tags=uninstall -i inventory/fastdfs.ini  tasks/fastdfs.yaml
       ;;
       *)
         usage fastdfs
