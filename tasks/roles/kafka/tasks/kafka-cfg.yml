@@ -53,7 +53,7 @@
     - restart kafka
 
 - name: "Enable kafka system service"
-  service: name=kafka state=started enabled=yes
+  service: name=kafka-{{ kafka_port }} state=started enabled=yes
   become: true
   tags:
     - kafka-install

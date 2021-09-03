@@ -4,10 +4,10 @@
     - kafka-install
     - kafka-cfg
     - check-env
-  when: run_mode == "Deploy"
+  when: run_mode == "deploy"
 
 - include: java.yml
-  when: kafka_java_enabled and run_mode == "Deploy"
+  when: kafka_java_enabled and run_mode == "deploy"
   tags:
     - kafka-install
     - java
@@ -16,30 +16,30 @@
   tags:
     - kafka-install
     - kafka-cfg
-  when: run_mode == "Deploy"
+  when: run_mode == "deploy"
 
 - include: limits.yml
   tags:
     - kafka-cfg
     - limits
-  when: run_mode == "Deploy"
+  when: run_mode == "deploy"
 
 - include: kafka-install.yml
   tags:
     - kafka-install
-  when: run_mode == "Deploy"
+  when: run_mode == "deploy"
 
 - include: kafka-cfg.yml
   tags:
     - kafka-cfg
-  when: run_mode == "Deploy"
+  when: run_mode == "deploy"
 
 - include: start.yml
   tags:
     - start-kafka
-  when: run_mode == "Start"
+  when: run_mode == "start"
 
 - include: stop.yml
   tags:
     - stop-kafka
-  when: run_mode == "Stop"
+  when: run_mode == "stop"

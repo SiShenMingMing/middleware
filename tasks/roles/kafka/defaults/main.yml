@@ -1,7 +1,7 @@
 ---
-run_mode: Deploy
-nexus_url: http://172.20.47.184:10005
-files_url: "{{nexus_url}}/nexus/content/repositories/middleware/ansible-middleware/roles/middleware/kafka/files"
+# run_mode: Deploy
+# nexus_url: http://172.20.47.184:10005
+# files_url: "{{nexus_url}}/nexus/content/repositories/middleware/ansible-middleware/roles/middleware/kafka/files"
 
 kafka_zookeeper_hosts: # <-- must be overridden further up the chain
 # e.g. [ 'srvr1', 'srvr2' ]

@@ -15,16 +15,16 @@ function usage(){
         mysql)
             diyecho "用法:\n mysql-install [端口号]\n"  $ECHO_COLOR
             diyecho " mysql-uninstall [端口号]\n"  $ECHO_COLOR
-            diyecho "例子:\n start_job.sh  mysql mysql-install 3306"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh  mysql mysql-install 3306"  $ECHO_COLOR
             diyecho "例子:\n start_job.sh  mysql mysql-uninstall 3306"  $ECHO_COLOR
         ;;
         postgresql)
-            diyecho "用法:\n postgresql-install \n"  $ECHO_COLOR
+            diyecho "安装用法:\n postgresql-install \n"  $ECHO_COLOR
             diyecho "例子:\n start_job.sh postgresql postgresql-install"  $ECHO_COLOR   
         ;;
         rabbitmq)
-            diyecho "用法:\n start_job.sh rabbitmq rabbitmq-install"  $ECHO_COLOR
-            diyecho "用法:\n start_job.sh rabbitmq rabbitmq-uninstall"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh rabbitmq rabbitmq-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh rabbitmq rabbitmq-uninstall"  $ECHO_COLOR
             diyecho "用法:\n start_job.sh rabbitmq rabbitmq-check_status"  $ECHO_COLOR   
         ;; 
         mongodb)
@@ -32,26 +32,27 @@ function usage(){
             diyecho "卸载用法:\n start_job.sh mongodb mongodb-uninstall"  $ECHO_COLOR 
         ;; 
         zookeeper)
-            diyecho "用法:\n start_job.sh zookeeper zookeeper-install"  $ECHO_COLOR
-            diyecho "用法:\n start_job.sh zookeeper zookeeper-uninstall"  $ECHO_COLOR 
+            diyecho "安装用法:\n start_job.sh zookeeper zookeeper-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh zookeeper zookeeper-uninstall"  $ECHO_COLOR 
         ;;
         kafka)
-            diyecho "用法:\n start_job.sh kafka kafka-install"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh kafka kafka-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh kafka kafka-uninstall"  $ECHO_COLOR
         ;;
         elasticsearch)
-            diyecho "用法:\n start_job.sh elasticsearch elasticsearch-install"  $ECHO_COLOR
-            diyecho "用法:\n start_job.sh elasticsearch elasticsearch-uninstall"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh elasticsearch elasticsearch-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh elasticsearch elasticsearch-uninstall"  $ECHO_COLOR
         ;; 
         redis-cluster)
-            diyecho "用法:\n start_job.sh redis-cluster redis-cluster-install"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh redis-cluster redis-cluster-install"  $ECHO_COLOR
         ;; 
         fastdfs)
-            diyecho "用法:\n start_job.sh fastdfs fastdfs-install"  $ECHO_COLOR
-            diyecho "用法:\n start_job.sh fastdfs fastdfs-check_status"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh fastdfs fastdfs-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh fastdfs fastdfs-check_status"  $ECHO_COLOR
         ;;       
         nginx)
-            diyecho "用法:\n start_job.sh nginx nginx-install"  $ECHO_COLOR
-            diyecho "用法:\n start_job.sh nginx nginx-uninstall"  $ECHO_COLOR
+            diyecho "安装用法:\n start_job.sh nginx nginx-install"  $ECHO_COLOR
+            diyecho "卸载用法:\n start_job.sh nginx nginx-uninstall"  $ECHO_COLOR
             diyecho "用法:\n start_job.sh nginx nginx-check_status"  $ECHO_COLOR 
         ;; 
         *)
@@ -150,8 +151,12 @@ case $1 in
       case $2 in
       kafka-install)
           ansible-playbook --tags=zookeeper-install -i inventory/kafka.ini  tasks/zookeeper.yaml
-          ansible-playbook --e "run_mode=Deploy" -i inventory/kafka.ini  tasks/kafka.yaml
+          ansible-playbook -e "run_mode=deploy" -i inventory/kafka.ini  tasks/kafka.yaml
       ;;
+      kafka-uninstall)
+          ansible-playbook --tags=zookeeper-uninstall -i inventory/kafka.ini  tasks/zookeeper.yaml
+          ansible-playbook  -e "run_mode=uninstall"  -i inventory/kafka.ini  tasks/kafka.yaml
+      ;;   
       *)
         usage kafka
         exit 1

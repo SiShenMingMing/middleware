@@ -93,4 +93,4 @@
     timeout: "{{ monasca_wait_for_period }}"
     port: "{{ zookeeper_client_port }}"
     host: "{{ inventory_hostname }}"
-    sleep: 2
+    sleep: 3

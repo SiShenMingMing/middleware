@@ -6,4 +6,12 @@
     kafka_hosts: "{{ groups.kafka | list }}"
     kafka_zookeeper_hosts: "{{ groups['zookeeper-host'] | list }}"
   roles:
-  - { role: kafka }
+  - { role: kafka, when: run_mode == "deploy" }
+
+
+- hosts: kafka
+  tasks:
+  - import_role:
+      name: kafka
+      tasks_from: uninstall
+    when: run_mode == "uninstall"

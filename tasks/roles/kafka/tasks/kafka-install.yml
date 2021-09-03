@@ -55,7 +55,7 @@
     - restart kafka
 
 - name: "Create systemd config"
-  template: dest=/etc/systemd/system/kafka.service src=etc/systemd/system/kafka.service.j2 mode=0644 owner=root group=root
+  template: dest=/etc/systemd/system/kafka-{{ kafka_port }}.service src=etc/systemd/system/kafka.service.j2 mode=0644 owner=root group=root
   become: true
   when: ansible_service_mgr == 'systemd'
   notify:
