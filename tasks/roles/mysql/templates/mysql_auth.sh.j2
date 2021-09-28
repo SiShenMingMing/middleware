@@ -1,4 +1,4 @@
 #!/bin/bash
 
 source /etc/profile
-mysql -uroot -hlocalhost  --connect-expired-password  -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock  -p'{{default_passwd.stdout}}' < {{MYSQL_DIR}}/mysql_init.sql
+/usr/local/mysql/bin/mysql -uroot -hlocalhost  --connect-expired-password  -S /data/apps/mysql/mysql{{ MYSQL_PORT }}/data/mysql.sock  -p'{{default_passwd.stdout}}' < {{MYSQL_DIR}}/mysql_init.sql
